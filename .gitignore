@@ -37,3 +37,4 @@ $*
 *.zip
 _autosave-*
 *.*-bak
+deps/deps.jl
