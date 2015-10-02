@@ -17,3 +17,7 @@ function version()
     vernum -= minor * 1000
     VersionNumber(major, minor, vernum)
 end
+
+include("error.jl")
+include("reader.jl")
+include("format.jl")
