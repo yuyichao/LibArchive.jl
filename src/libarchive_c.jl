@@ -19,5 +19,6 @@ function version()
 end
 
 include("error.jl")
+include("callback.jl")
 include("reader.jl")
 include("format.jl")
