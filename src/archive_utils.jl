@@ -37,9 +37,38 @@ clear_error(archive::Archive) =
     ccall((:archive_clear_error, libarchive), Void, (Ptr{Void},), archive)
 set_error(archive::Archive, code, msg) =
     ccall((:archive_set_error, libarchive),
-          Void, (Ptr{Void}, Cint, Cstring, Cstring), archive, code, "%s", msg)
+          Void, (Ptr{Void}, Cint, Ptr{Cchar}, Cstring), archive, code, "%s", msg)
 copy_error(dest::Archive, src::Archive) =
     ccall((:archive_copy_error, libarchive),
           Void, (Ptr{Void}, Ptr{Void}), dest, src)
 file_count(archive::Archive) =
     ccall((:archive_file_count, libarchive), Void, (Ptr{Void},), archive)
+
+function check_objptr{T}(ptr::Ptr{T}, c_archive::Ptr{Void})
+    if !isa(unsafe_pointer_to_objref(ptr), T)
+        ccall((:archive_set_error, libarchive),
+              Void, (Ptr{Void}, Cint, Ptr{Cchar}),
+              c_archive, Status.FAILED, "TypeError")
+        return Status.FAILED
+    end
+    return Status.OK
+end
+
+function set_exception(archive::Archive, ex::ANY)
+    status, msg = if isa(ex, EOFError)
+        Status.EOF, "end of file"
+    elseif isa(ex, ArchiveRetry)
+        Status.RETRY, ""
+    elseif isa(ex, ArchiveWarn)
+        Status.WARN, ""
+    elseif isa(ex, ArchiveFailed)
+        Status.FAILED, ""
+    elseif isa(ex, ArchiveFatal)
+        Status.FATAL, ""
+    else
+        Status.FAILED, ""
+    end
+    # Only set error if there isn't already one
+    errno(archive) == 0 && set_error(archive, status, msg)
+    status
+end
