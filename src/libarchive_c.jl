@@ -1,5 +1,8 @@
 #
 
+# This will be changed to `Cint` in libarchive 4.0
+const _la_mode_t = Cushort
+
 include("../deps/deps.jl")
 include("constants.jl")
 

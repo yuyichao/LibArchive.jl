@@ -145,3 +145,15 @@ const OLDER = Cint(0x0002)
 "Comparison flag: Match the time if it is equal to"
 const EQUAL = Cint(0x0010)
 end
+
+module FileType
+import LibArchive: _la_mode_t
+const MT = _la_mode_t(0o170000)
+const REG = _la_mode_t(0o100000)
+const LNK = _la_mode_t(0o120000)
+const SOCK = _la_mode_t(0o140000)
+const CHR = _la_mode_t(0o020000)
+const BLK = _la_mode_t(0o060000)
+const DIR = _la_mode_t(0o040000)
+const IFO = _la_mode_t(0o010000)
+end
