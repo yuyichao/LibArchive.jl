@@ -18,7 +18,10 @@ function version()
     VersionNumber(major, minor, vernum)
 end
 
+abstract Archive
+
 include("error.jl")
 include("callback.jl")
+include("archive_utils.jl")
 include("reader.jl")
 include("format.jl")

@@ -21,7 +21,7 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
-type Reader{T}
+type Reader{T} <: Archive
     ptr::Ptr{Void}
     data::T
     opened::Bool
