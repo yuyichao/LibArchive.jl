@@ -15,7 +15,7 @@ using Base.Test
 
 ## Read
 let
-    archive_read = LibArchive.Reader()
+    archive_read = LibArchive.Reader(nothing)
     @test archive_read.ptr != C_NULL
     LibArchive.free(archive_read)
     @test archive_read.ptr == C_NULL
