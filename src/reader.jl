@@ -38,9 +38,10 @@ Reader{T}(data::T) = Reader{T}(data)
 
 function free(archive::Reader)
     ptr = archive.ptr
-    ptr == C_NULL && return Status.OK
+    ptr == C_NULL && return
     ccall((:archive_read_free, libarchive), Cint, (Ptr{Void},), ptr)
     archive.ptr = C_NULL
+    nothing
 end
 
 function Base.cconvert(::Type{Ptr{Void}}, archive::Reader)

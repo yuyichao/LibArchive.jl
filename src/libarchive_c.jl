@@ -2,6 +2,7 @@
 
 # This will be changed to `Cint` in libarchive 4.0
 const _la_mode_t = Cushort
+const _Cdev_t = UInt64
 
 include("../deps/deps.jl")
 include("constants.jl")
@@ -26,5 +27,6 @@ abstract Archive
 include("error.jl")
 include("callback.jl")
 include("archive_utils.jl")
+include("entry.jl")
 include("reader.jl")
 include("format.jl")
