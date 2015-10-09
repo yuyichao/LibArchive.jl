@@ -53,7 +53,12 @@ Base.unsafe_convert(::Type{Ptr{Void}}, archive::Reader) = archive.ptr
 function ensure_open(archive::Reader)
     archive.opened && return
     archive.opened = true
-    do_open(archive)
+    try
+        do_open(archive)
+    catch
+        archive.opened = false
+        rethrow()
+    end
     nothing
 end
 
@@ -216,4 +221,12 @@ function do_open{T<:GenericReadData}(archive::Reader{T})
               (Ptr{Void}, Ptr{Void}), archive,
               to_close_callback(reader_close_callback, Reader{T}))
     @_la_call(archive_read_open1, (Ptr{Void},), archive)
+end
+
+function next_header(archive::Reader)
+    ensure_open(archive)
+    entry = Entry(archive)
+    @_la_call(archive_read_next_header2, (Ptr{Void}, Ptr{Void}),
+              archive, entry)
+    entry
 end
