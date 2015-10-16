@@ -1,6 +1,8 @@
 ###
 # Format and filters
 
+# Reader
+
 support_filter_all(archive::Reader) =
     @_la_call(archive_read_support_filter_all, (Ptr{Void},), archive)
 support_filter_bzip2(archive::Reader) =
@@ -89,3 +91,86 @@ append_filter_program_signature(archive::Reader, cmd, sig) =
     @_la_call(archive_read_append_filter_program_signature,
               (Ptr{Void}, Cstring, Ptr{Void}, Csize_t),
               archive, cmd, sig, sizeof(sig))
+
+# Writer
+
+"A convenience function to set the filter based on the code."
+add_filter(archive::Writer, filter_code::Integer) =
+    @_la_call(archive_write_add_filter, (Ptr{Void}, Cint),
+              archive, filter_code)
+add_filter(archive::Writer, name::AbstractString) =
+    @_la_call(archive_write_add_filter_by_name, (Ptr{Void}, Cstring),
+              archive, name)
+add_filter_b64encode(archive::Writer) =
+    @_la_call(archive_write_add_filter_b64encode, (Ptr{Void},), archive)
+add_filter_bzip2(archive::Writer) =
+    @_la_call(archive_write_add_filter_bzip2, (Ptr{Void},), archive)
+add_filter_compress(archive::Writer) =
+    @_la_call(archive_write_add_filter_compress, (Ptr{Void},), archive)
+add_filter_grzip(archive::Writer) =
+    @_la_call(archive_write_add_filter_grzip, (Ptr{Void},), archive)
+add_filter_gzip(archive::Writer) =
+    @_la_call(archive_write_add_filter_gzip, (Ptr{Void},), archive)
+add_filter_lrzip(archive::Writer) =
+    @_la_call(archive_write_add_filter_lrzip, (Ptr{Void},), archive)
+add_filter_lzip(archive::Writer) =
+    @_la_call(archive_write_add_filter_lzip, (Ptr{Void},), archive)
+add_filter_lzma(archive::Writer) =
+    @_la_call(archive_write_add_filter_lzma, (Ptr{Void},), archive)
+add_filter_lzop(archive::Writer) =
+    @_la_call(archive_write_add_filter_lzop, (Ptr{Void},), archive)
+add_filter_none(archive::Writer) =
+    @_la_call(archive_write_add_filter_none, (Ptr{Void},), archive)
+add_filter_program(archive::Writer, cmd::AbstractString) =
+    @_la_call(archive_write_add_filter_program,
+              (Ptr{Void}, Cstring), archive, cmd)
+add_filter_uuencode(archive::Writer) =
+    @_la_call(archive_write_add_filter_uuencode, (Ptr{Void},), archive)
+add_filter_xz(archive::Writer) =
+    @_la_call(archive_write_add_filter_xz, (Ptr{Void},), archive)
+
+"A convenience function to set the format based on the code or name."
+set_format(archive::Writer, format_code::Integer) =
+    @_la_call(archive_write_set_format, (Ptr{Void}, Cint),
+              archive, format_code)
+set_format(archive::Writer, name::AbstractString) =
+    @_la_call(archive_write_set_format_by_name, (Ptr{Void}, Cstring),
+              archive, name)
+set_format_7zip(archive::Writer) =
+    @_la_call(archive_write_set_format_7zip, (Ptr{Void},), archive)
+set_format_ar_bsd(archive::Writer) =
+    @_la_call(archive_write_set_format_ar_bsd, (Ptr{Void},), archive)
+set_format_ar_svr4(archive::Writer) =
+    @_la_call(archive_write_set_format_ar_svr4, (Ptr{Void},), archive)
+set_format_cpio(archive::Writer) =
+    @_la_call(archive_write_set_format_cpio, (Ptr{Void},), archive)
+set_format_cpio_newc(archive::Writer) =
+    @_la_call(archive_write_set_format_cpio_newc, (Ptr{Void},), archive)
+set_format_gnutar(archive::Writer) =
+    @_la_call(archive_write_set_format_gnutar, (Ptr{Void},), archive)
+set_format_iso9660(archive::Writer) =
+    @_la_call(archive_write_set_format_iso9660, (Ptr{Void},), archive)
+set_format_mtree(archive::Writer) =
+    @_la_call(archive_write_set_format_mtree, (Ptr{Void},), archive)
+set_format_mtree_classic(archive::Writer) =
+    @_la_call(archive_write_set_format_mtree_classic, (Ptr{Void},), archive)
+set_format_pax(archive::Writer) =
+    @_la_call(archive_write_set_format_pax, (Ptr{Void},), archive)
+set_format_pax_restricted(archive::Writer) =
+    @_la_call(archive_write_set_format_pax_restricted, (Ptr{Void},), archive)
+set_format_shar(archive::Writer) =
+    @_la_call(archive_write_set_format_shar, (Ptr{Void},), archive)
+set_format_shar_dump(archive::Writer) =
+    @_la_call(archive_write_set_format_shar_dump, (Ptr{Void},), archive)
+set_format_ustar(archive::Writer) =
+    @_la_call(archive_write_set_format_ustar, (Ptr{Void},), archive)
+set_format_v7tar(archive::Writer) =
+    @_la_call(archive_write_set_format_v7tar, (Ptr{Void},), archive)
+set_format_xar(archive::Writer) =
+    @_la_call(archive_write_set_format_xar, (Ptr{Void},), archive)
+set_format_zip(archive::Writer) =
+    @_la_call(archive_write_set_format_zip, (Ptr{Void},), archive)
+zip_set_compression_deflate(archive::Writer) =
+    @_la_call(archive_write_zip_set_compression_deflate, (Ptr{Void},), archive)
+zip_set_compression_store(archive::Writer) =
+    @_la_call(archive_write_zip_set_compression_store, (Ptr{Void},), archive)
