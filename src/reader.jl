@@ -44,6 +44,9 @@ function free(archive::Reader)
     nothing
 end
 
+Base.close(archive::Reader) =
+    @_la_call(archive_read_close, (Ptr{Void},), archive)
+
 function Base.cconvert(::Type{Ptr{Void}}, archive::Reader)
     archive.ptr == C_NULL && error("archive already freed")
     archive
