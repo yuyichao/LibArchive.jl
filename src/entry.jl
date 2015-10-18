@@ -110,3 +110,173 @@ end
 fflags_text(entry::Entry) =
     bytestring(ccall((:archive_entry_fflags_text, libarchive),
                      Cstring, (Ptr{Void},), entry))
+gid(entry::Entry) =
+    ccall((:archive_entry_gid, libarchive), Int64, (Ptr{Void},), entry)
+gname(entry::Entry) =
+    bytestring(ccall((:archive_entry_gname, libarchive),
+                     Cstring, (Ptr{Void},), entry))
+
+hardlink(entry::Entry) =
+    bytestring(ccall((:archive_entry_hardlink, libarchive),
+                     Cstring, (Ptr{Void},), entry))
+ino(entry::Entry) =
+    ccall((:archive_entry_ino, libarchive), Int64, (Ptr{Void},), entry)
+ino_is_set(entry::Entry) =
+    ccall((:archive_entry_ino_is_set, libarchive),
+          Cint, (Ptr{Void},), entry) != 0
+
+mode(entry::Entry) =
+    Cint(ccall((:archive_entry_mode, libarchive),
+               _la_mode_t, (Ptr{Void},), entry))
+
+mtime(entry::Entry) = ccall((:archive_entry_mtime, libarchive),
+                            Libc.TmStruct, (Ptr{Void},), entry)
+mtime_nsec(entry::Entry) = ccall((:archive_entry_mtime_nsec, libarchive),
+                                 Clong, (Ptr{Void},), entry)
+mtime_is_set(entry::Entry) = ccall((:archive_entry_mtime_is_set, libarchive),
+                                   Cint, (Ptr{Void},), entry) != 0
+
+nlink(entry::Entry) =
+    ccall((:archive_entry_nlink, libarchive), Cuint, (Ptr{Void},), entry)
+pathname(entry::Entry) =
+    bytestring(ccall((:archive_entry_pathname, libarchive),
+                     Cstring, (Ptr{Void},), entry))
+
+perm(entry::Entry) =
+    Cint(ccall((:archive_entry_perm, libarchive),
+               _la_mode_t, (Ptr{Void},), entry))
+rdev(entry::Entry) =
+    ccall((:archive_entry_rdev, libarchive), _Cdev_t, (Ptr{Void},), entry)
+rdevmajor(entry::Entry) =
+    ccall((:archive_entry_rdevmajor, libarchive), _Cdev_t, (Ptr{Void},), entry)
+rdevminor(entry::Entry) =
+    ccall((:archive_entry_rdevminor, libarchive), _Cdev_t, (Ptr{Void},), entry)
+sourcepath(entry::Entry) =
+    bytestring(ccall((:archive_entry_sourcepath, libarchive),
+                     Cstring, (Ptr{Void},), entry))
+size(entry::Entry) =
+    ccall((:archive_entry_size, libarchive), Int64, (Ptr{Void},), entry)
+size_is_set(entry::Entry) =
+    ccall((:archive_entry_size_is_set, libarchive), Cint, (Ptr{Void},), entry)
+strmode(entry::Entry) =
+    bytestring(ccall((:archive_entry_strmode, libarchive),
+                     Cstring, (Ptr{Void},), entry))
+symlink(entry::Entry) =
+    bytestring(ccall((:archive_entry_symlink, libarchive),
+                     Cstring, (Ptr{Void},), entry))
+uid(entry::Entry) =
+    ccall((:archive_entry_uid, libarchive), Int64, (Ptr{Void},), entry)
+uname(entry::Entry) =
+    bytestring(ccall((:archive_entry_uname, libarchive),
+                     Cstring, (Ptr{Void},), entry))
+
+set_atime(entry::Entry, t, ns) =
+    ccall((:archive_entry_set_atime, libarchive),
+          Void, (Ptr{Void}, TmStruct, Clong), entry, t, ns)
+unset_atime(entry::Entry) =
+    ccall((:archive_entry_unset_atime, libarchive), Void, (Ptr{Void},), entry)
+set_birthtime(entry::Entry, t, ns) =
+    ccall((:archive_entry_set_birthtime, libarchive),
+          Void, (Ptr{Void}, TmStruct, Clong), entry, t, ns)
+unset_birthtime(entry::Entry) =
+    ccall((:archive_entry_unset_birthtime, libarchive),
+          Void, (Ptr{Void},), entry)
+set_ctime(entry::Entry, t, ns) =
+    ccall((:archive_entry_set_ctime, libarchive),
+          Void, (Ptr{Void}, TmStruct, Clong), entry, t, ns)
+unset_ctime(entry::Entry) =
+    ccall((:archive_entry_unset_ctime, libarchive), Void, (Ptr{Void},), entry)
+set_dev(entry::Entry, dev) =
+    ccall((:archive_entry_set_dev, libarchive),
+          Void, (Ptr{Void}, _Cdev_t), entry, dev)
+set_devmajor(entry::Entry, dev) =
+    ccall((:archive_entry_set_devmajor, libarchive),
+          Void, (Ptr{Void}, _Cdev_t), entry, dev)
+set_devminor(entry::Entry, dev) =
+    ccall((:archive_entry_set_devminor, libarchive),
+          Void, (Ptr{Void}, _Cdev_t), entry, dev)
+set_filetype(entry::Entry, ftype) =
+    ccall((:archive_entry_set_filetype, libarchive),
+          Void, (Ptr{Void}, Cuint), entry, ftype)
+set_fflags(entry::Entry, set, clear) =
+    ccall((:archive_entry_set_fflags, libarchive),
+          Void, (Ptr{Void}, Culong, Culong), entry, set, clear)
+set_fflags(entry::Entry, fflags::AbstractString) =
+    (ccall((:archive_entry_copy_fflags_text, libarchive),
+           Ptr{Void}, (Ptr{Void}, Cstring), entry, fflags); nothing)
+set_gid(entry::Entry, gid) =
+    ccall((:archive_entry_set_gid, libarchive),
+          Void, (Ptr{Void}, Int64), entry, gid)
+set_gname(entry::Entry, gname::ASCIIString) =
+    (ccall((:archive_entry_set_gname, libarchive),
+           Void, (Ptr{Void}, Cstring), entry, gname); 0)
+set_gname(entry::Entry, gname::AbstractString) =
+    ccall((:archive_entry_update_gname_utf8, libarchive),
+          Cint, (Ptr{Void}, Cstring), entry, gname)
+set_hardlink(entry::Entry, hl::ASCIIString) =
+    (ccall((:archive_entry_set_hardlink, libarchive),
+           Void, (Ptr{Void}, Cstring), entry, hl); 0)
+set_hardlink(entry::Entry, hl::AbstractString) =
+    ccall((:archive_entry_update_hardlink_utf8, libarchive),
+          Cint, (Ptr{Void}, Cstring), entry, hl)
+set_ino(entry::Entry, ino) =
+    ccall((:archive_entry_set_ino, libarchive),
+          Void, (Ptr{Void}, Int64), entry, ino)
+set_link(entry::Entry, link::ASCIIString) =
+    (ccall((:archive_entry_set_link, libarchive),
+           Void, (Ptr{Void}, Cstring), entry, link); 0)
+set_link(entry::Entry, link::AbstractString) =
+    ccall((:archive_entry_update_link_utf8, libarchive),
+          Cint, (Ptr{Void}, Cstring), entry, link)
+set_mode(entry::Entry, mode) =
+    ccall((:archive_entry_set_mode, libarchive),
+          Void, (Ptr{Void}, _la_mode_t), entry, mode)
+set_mtime(entry::Entry, t, ns) =
+    ccall((:archive_entry_set_mtime, libarchive),
+          Void, (Ptr{Void}, TmStruct, Clong), entry, t, ns)
+unset_mtime(entry::Entry) =
+    ccall((:archive_entry_unset_mtime, libarchive), Void, (Ptr{Void},), entry)
+set_nlink(entry::Entry, nlink) =
+    ccall((:archive_entry_set_nlink, libarchive),
+          Void, (Ptr{Void}, Cuint), entry, nlink)
+set_pathname(entry::Entry, path::ASCIIString) =
+    (ccall((:archive_entry_set_pathname, libarchive),
+           Void, (Ptr{Void}, Cstring), entry, path); 0)
+set_pathname(entry::Entry, path::AbstractString) =
+    ccall((:archive_entry_update_pathname_utf8, libarchive),
+          Cint, (Ptr{Void}, Cstring), entry, path)
+set_perm(entry::Entry, perm) =
+    ccall((:archive_entry_set_perm, libarchive),
+          Void, (Ptr{Void}, _la_mode_t), entry, perm)
+set_rdev(entry::Entry, rdev) =
+    ccall((:archive_entry_set_rdev, libarchive),
+          Void, (Ptr{Void}, _Cdev_t), entry, rdev)
+set_rdevmajor(entry::Entry, rdev) =
+    ccall((:archive_entry_set_rdevmajor, libarchive),
+          Void, (Ptr{Void}, _Cdev_t), entry, rdev)
+set_rdevminor(entry::Entry, rdev) =
+    ccall((:archive_entry_set_rdevminor, libarchive),
+          Void, (Ptr{Void}, _Cdev_t), entry, rdev)
+set_size(entry::Entry, size) =
+    ccall((:archive_entry_set_size, libarchive),
+          Void, (Ptr{Void}, Int64), entry, size)
+unset_size(entry::Entry) =
+    ccall((:archive_entry_unset_size, libarchive), Void, (Ptr{Void},), entry)
+set_sourcepath(entry::Entry, path::AbstractString) =
+    ccall((:archive_entry_copy_sourcepath, libarchive),
+          Void, (Ptr{Void}, Cstring), entry, path)
+set_symlink(entry::Entry, sym::ASCIIString) =
+    (ccall((:archive_entry_set_symlink, libarchive),
+           Void, (Ptr{Void}, Cstring), entry, sym); 0)
+set_symlink(entry::Entry, sym::AbstractString) =
+    ccall((:archive_entry_update_symlink_utf8, libarchive),
+          Cint, (Ptr{Void}, Cstring), entry, sym)
+set_uid(entry::Entry, uid) =
+    ccall((:archive_entry_set_uid, libarchive),
+          Void, (Ptr{Void}, Int64), entry, uid)
+set_uname(entry::Entry, uname::ASCIIString) =
+    (ccall((:archive_entry_set_uname, libarchive),
+           Void, (Ptr{Void}, Cstring), entry, uname); 0)
+set_uname(entry::Entry, uname::AbstractString) =
+    ccall((:archive_entry_update_uname_utf8, libarchive),
+          Cint, (Ptr{Void}, Cstring), entry, uname)
