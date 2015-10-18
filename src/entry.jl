@@ -297,3 +297,120 @@ end
 set_mac_metadata(entry::Entry, data::Vector{UInt8}) =
     ccall((:archive_entry_copy_mac_metadata, libarchive),
           Void, (Ptr{Void}, Ptr{Void}, Csize_t), entry, data, sizeof(data))
+
+# ACL routines.  This used to simply store and return text-format ACL
+# strings, but that proved insufficient for a number of reasons:
+#   = clients need control over uname/uid and gname/gid mappings
+#   = there are many different ACL text formats
+#   = would like to be able to read/convert archives containing ACLs
+#     on platforms that lack ACL libraries
+#
+# This last point, in particular, forces me to implement a reasonably
+# complete set of ACL support routines.
+
+# Set the ACL by clearing it and adding entries one at a time.
+# Unlike the POSIX.1e ACL routines, you must specify the type
+# (access/default) for each entry.  Internally, the ACL data is just
+# a soup of entries.  API calls here allow you to retrieve just the
+# entries of interest.  This design (which goes against the spirit of
+# POSIX.1e) is useful for handling archive formats that combine
+# default and access information in a single ACL list.
+acl_clear(entry::Entry) =
+    ccall((:archive_entry_acl_clear, libarchive), Void, (Ptr{Void},), entry)
+acl_add_entry(entry::Entry, typ, perm, tag, qual, name::AbstractString) =
+    @_la_call(archive_entry_acl_add_entry,
+              (Ptr{Void}, Cint, Cint, Cint, Cint, Cstring),
+              entry, typ, perm, tag, qual, name)
+
+# To retrieve the ACL, first "reset", then repeatedly ask for the
+# "next" entry.  The want_type parameter allows you to request only
+# certain types of entries.
+acl_reset(entry::Entry, want) =
+    ccall((:archive_entry_acl_reset, libarchive), Cint,
+          (Ptr{Void}, Cint), entry, want)
+function acl_next(entry::Entry, want)
+    typ = Ref{Cint}()
+    perm = Ref{Cint}()
+    tag = Ref{Cint}()
+    qual = Ref{Cint}()
+    name = Ref{Ptr{UInt8}}()
+    @_la_call(archive_entry_acl_next,
+              (Ptr{Void}, Cint, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint},
+               Ptr{Ptr{UInt8}}), entry, want, typ, perm, tag, qual, name)
+    typ[], perm[], tag[], qual[], bytestring(name[])
+end
+
+"""
+Construct a text-format ACL.  The flags argument is a bitmask that
+can include any of the following:
+
+* `ACL.Type.ACCESS` - Include POSIX.1e "access" entries.
+* `ACL.Type.DEFAULT` - Include POSIX.1e "default" entries.
+* `ACL.Type.NFS4` - Include NFS4 entries.
+* `ACL.Style.EXTRA_ID` - Include extra numeric ID field in
+  each ACL entry. ('star' introduced this for POSIX.1e, this flag
+  also applies to NFS4.)
+* `ACL.Style.MARK_DEFAULT` - Include "default:" before each
+  default ACL entry, as used in old Solaris ACLs.
+"""
+acl_text(entry::Entry, flags) =
+    bytestring(ccall((:archive_entry_acl_text, libarchive), Cstring,
+                     (Ptr{Void}, Cint), entry, flags))
+
+"Return a count of entries matching `want`"
+acl_count(entry::Entry, want) =
+    ccall((:archive_entry_acl_count, libarchive), Cint, (Ptr{Void}, Cint),
+          entry, want)
+
+# Return an opaque ACL object.
+# There's not yet anything clients can actually do with this...
+# acl(entry::Entry) =
+#     ccall((:archive_entry_acl, libarchive), Ptr{archive_acl},
+#           (Ptr{Void},), entry)
+
+# extended attributes
+xattr_clear(entry::Entry) =
+    ccall((:archive_entry_xattr_clear, libarchive), Void, (Ptr{Void},), entry)
+xattr_add_entry(entry::Entry, name::AbstractString, value) =
+    ccall((:archive_entry_xattr_add_entry, libarchive), Void,
+          (Ptr{Void}, Cstring, Ptr{Void}, Csize_t),
+          entry, name, value, sizeof(value))
+
+# To retrieve the xattr list, first "reset", then repeatedly ask for the
+# "next" entry.
+xattr_count(entry::Entry) =
+    ccall((:archive_entry_xattr_count, libarchive), Cint, (Ptr{Void},), entry)
+xattr_reset(entry::Entry) =
+    ccall((:archive_entry_xattr_reset, libarchive), Cint, (Ptr{Void},), entry)
+function xattr_next(entry::Entry)
+    name = Ref{Ptr{UInt8}}()
+    value = Ref{Ptr{Void}}()
+    len = Ref{Csize_t}()
+    @_la_call(archive_entry_xattr_next,
+              (Ptr{Void}, Ptr{Ptr{UInt8}}, Ptr{Ptr{Void}}, Ptr{Csize_t}),
+              entry, name, value, len)
+    buff = Vector{UInt8}(len[])
+    ccall(:memcpy, Ptr{Void}, buff, value[], len[])
+    bytestring(name[]), buff
+end
+
+# sparse
+sparse_clear(entry::Entry) =
+    ccall((:archive_entry_sparse_clear, libarchive), Void, (Ptr{Void},), entry)
+sparse_add_entry(entry::Entry, offset, len) =
+    ccall((:archive_entry_sparse_add_entry, libarchive), Void,
+          (Ptr{Void}, Int64, Int64), entry, offset, len)
+
+# To retrieve the xattr list, first "reset", then repeatedly ask for the
+# "next" entry.
+sparse_count(entry::Entry) =
+    ccall((:archive_entry_sparse_count, libarchive), Cint, (Ptr{Void},), entry)
+sparse_reset(entry::Entry) =
+    ccall((:archive_entry_sparse_reset, libarchive), Cint, (Ptr{Void},), entry)
+function sparse_next(entry::Entry)
+    offset = Ref{Int64}()
+    len = Ref{Int64}()
+    @_la_call(archive_entry_sparse_next,
+              (Ptr{Void}, Ptr{Int64}, Ptr{Int64}), entry, offset, len)
+    offset[], len[]
+end

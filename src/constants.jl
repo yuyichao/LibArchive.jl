@@ -227,4 +227,9 @@ const MASK = Cint(10005)
 const OTHER = Cint(10006)
 "Everyone (NFS4 only)"
 const EVERYONE = Cint(10107)
+
+module Style
+const EXTRA_ID = Cint(1024)
+const MARK_DEFAULT = Cint(2048)
+end
 end
