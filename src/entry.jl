@@ -280,3 +280,20 @@ set_uname(entry::Entry, uname::ASCIIString) =
 set_uname(entry::Entry, uname::AbstractString) =
     ccall((:archive_entry_update_uname_utf8, libarchive),
           Cint, (Ptr{Void}, Cstring), entry, uname)
+
+# Storage for Mac OS-specific AppleDouble metadata information.
+# Apple-format tar files store a separate binary blob containing
+# encoded metadata with ACL, extended attributes, etc.
+# This provides a place to store that blob.
+function mac_metadata(entry::Entry)
+    _sz = Ref{Csize_t}()
+    ptr = ccall((:archive_entry_mac_metadata, libarchive),
+                Ptr{Void}, (Ptr{Void}, Ptr{Csize_t}), entry, _sz)
+    sz = _sz[]
+    data = Vector{UInt8}(sz)
+    ccall(:memcpy, Ptr{Void}, (Ptr{Void}, Ptr{Void}, Csize_t), data, ptr, sz)
+    data
+end
+set_mac_metadata(entry::Entry, data::Vector{UInt8}) =
+    ccall((:archive_entry_copy_mac_metadata, libarchive),
+          Void, (Ptr{Void}, Ptr{Void}, Csize_t), entry, data, sizeof(data))

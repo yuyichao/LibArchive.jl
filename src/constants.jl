@@ -157,3 +157,74 @@ const BLK = _la_mode_t(0o060000)
 const DIR = _la_mode_t(0o040000)
 const IFO = _la_mode_t(0o010000)
 end
+
+module ACL
+# Permission bits.
+
+const EXECUTE = Cint(0x00000001)
+const WRITE = Cint(0x00000002)
+const READ = Cint(0x00000004)
+const READ_DATA = Cint(0x00000008)
+const LIST_DIRECTORY = Cint(0x00000008)
+const WRITE_DATA = Cint(0x00000010)
+const ADD_FILE = Cint(0x00000010)
+const APPEND_DATA = Cint(0x00000020)
+const ADD_SUBDIRECTORY = Cint(0x00000020)
+const READ_NAMED_ATTRS = Cint(0x00000040)
+const WRITE_NAMED_ATTRS = Cint(0x00000080)
+const DELETE_CHILD = Cint(0x00000100)
+const READ_ATTRIBUTES = Cint(0x00000200)
+const WRITE_ATTRIBUTES = Cint(0x00000400)
+const DELETE = Cint(0x00000800)
+const READ_ACL = Cint(0x00001000)
+const WRITE_ACL = Cint(0x00002000)
+const WRITE_OWNER = Cint(0x00004000)
+const SYNCHRONIZE = Cint(0x00008000)
+
+const PERMS_POSIX1E = EXECUTE | WRITE | READ
+const PERMS_NFS4 = (EXECUTE | READ_DATA | LIST_DIRECTORY | WRITE_DATA |
+                    ADD_FILE | APPEND_DATA | ADD_SUBDIRECTORY |
+                    READ_NAMED_ATTRS | WRITE_NAMED_ATTRS | DELETE_CHILD |
+                    READ_ATTRIBUTES | WRITE_ATTRIBUTES | DELETE | READ_ACL |
+                    WRITE_ACL | WRITE_OWNER | SYNCHRONIZE)
+
+# Inheritance values (NFS4 ACLs only); included in permset.
+const FILE_INHERIT = Cint(0x02000000)
+const DIRECTORY_INHERIT = Cint(0x04000000)
+const NO_PROPAGATE_INHERIT = Cint(0x08000000)
+const INHERIT_ONLY = Cint(0x10000000)
+const SUCCESSFUL_ACCESS = Cint(0x20000000)
+const FAILED_ACCESS = Cint(0x40000000)
+
+const INHERITANCE_NFS4 = (FILE_INHERIT | DIRECTORY_INHERIT |
+                          NO_PROPAGATE_INHERIT | INHERIT_ONLY |
+                          SUCCESSFUL_ACCESS | FAILED_ACCESS)
+
+module Type
+# We need to be able to specify combinations of these.
+const ACCESS = Cint(256)  # POSIX.1e only
+const DEFAULT = Cint(512) # POSIX.1e only
+const ALLOW = Cint(1024) # NFS4 only
+const DENY = Cint(2048) # NFS4 only
+const AUDIT = Cint(4096) # NFS4 only
+const ALARM = Cint(8192) # NFS4 only
+const POSIX1E = (ACCESS | DEFAULT)
+const NFS4 = (ALLOW | DENY | AUDIT | ALARM)
+end
+
+# Tag values mimic POSIX.1e
+"Specified user."
+const USER = Cint(10001)
+"User who owns the file."
+const USER_OBJ = Cint(10002)
+"Specified group."
+const GROUP = Cint(10003)
+"Group who owns the file."
+const GROUP_OBJ = Cint(10004)
+"Modify group access (POSIX.1e only)"
+const MASK = Cint(10005)
+"Public (POSIX.1e only)"
+const OTHER = Cint(10006)
+"Everyone (NFS4 only)"
+const EVERYONE = Cint(10107)
+end
