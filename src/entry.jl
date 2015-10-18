@@ -390,7 +390,8 @@ function xattr_next(entry::Entry)
               (Ptr{Void}, Ptr{Ptr{UInt8}}, Ptr{Ptr{Void}}, Ptr{Csize_t}),
               entry, name, value, len)
     buff = Vector{UInt8}(len[])
-    ccall(:memcpy, Ptr{Void}, buff, value[], len[])
+    ccall(:memcpy, Ptr{Void}, (Ptr{Void}, Ptr{Void}, Csize_t),
+          buff, value[], len[])
     bytestring(name[]), buff
 end
 

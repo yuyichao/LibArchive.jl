@@ -22,3 +22,21 @@ let
     LibArchive.free(archive_read)
     @test_throws ErrorException LibArchive.support_filter_all(archive_read)
 end
+
+mktempdir() do d
+    cd(d) do
+        writer = LibArchive.file_writer("./test.tar.bz2")
+        LibArchive.set_format_gnutar(writer)
+        LibArchive.add_filter_bzip2(writer)
+        entry = LibArchive.Entry(writer)
+        LibArchive.set_pathname(entry, "test.txt")
+        LibArchive.set_size(entry, 10)
+        LibArchive.set_perm(entry, 0o644)
+        LibArchive.set_filetype(entry, LibArchive.FileType.REG)
+        LibArchive.write_header(writer, entry)
+        LibArchive.write_data(writer, ("0123456789").data)
+        LibArchive.finish_entry(writer)
+        close(writer)
+        LibArchive.free(writer)
+    end
+end

@@ -113,7 +113,7 @@ immutable WriteFD
     fd::Cint
 end
 
-file_write{T<:Integer}(fd::T) =
+file_writer{T<:Integer}(fd::T) =
     Writer(WriteFD(Cint(fd)))
 
 function do_open(archive::Writer{WriteFD})
@@ -210,8 +210,9 @@ end
 
 function write_data(archive::Writer, data)
     ensure_open(archive)
-    @_la_call(archive_write_data, (Ptr{Void}, Ptr{Void}, Csize_t),
-              archive, data, sizeof(data))
+    ccall((:archive_write_data, libarchive),
+          Cssize_t, (Ptr{Void}, Ptr{Void}, Csize_t),
+          archive, data, sizeof(data))
 end
 
 function finish_entry(archive::Writer)

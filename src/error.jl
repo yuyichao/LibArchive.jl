@@ -1,27 +1,43 @@
 ###
 # Error
 
-immutable ArchiveRetry <: Exception end
-immutable ArchiveWarn <: Exception end
-immutable ArchiveFailed <: Exception end
-immutable ArchiveFatal <: Exception end
+immutable ArchiveRetry <: Exception
+    msg
+end
+immutable ArchiveWarn <: Exception
+    msg
+end
+immutable ArchiveFailed <: Exception
+    msg
+end
+immutable ArchiveFatal <: Exception
+    msg
+end
 
-@noinline function _la_error(err::Cint)
+_la_error_msg(archive::Archive) = error_string(archive)
+_la_error_msg(other) = ""
+
+@noinline function _la_error(err::Cint, obj=nothing)
     err == Status.EOF && throw(EOFError())
-    err == Status.RETRY && throw(ArchiveRetry())
-    err == Status.WARN && throw(ArchiveWarn())
-    err == Status.FAILED && throw(ArchiveFailed())
-    err == Status.FATAL && throw(ArchiveFatal())
+    err == Status.RETRY && throw(ArchiveRetry(_la_error_msg(obj)))
+    err == Status.WARN && throw(ArchiveWarn(_la_error_msg(obj)))
+    err == Status.FAILED && throw(ArchiveFailed(_la_error_msg(obj)))
+    err == Status.FATAL && throw(ArchiveFatal(_la_error_msg(obj)))
     error("Unknown error $err")
 end
 
 macro _la_call(name, types, args...)
     call_ex = esc(:(ccall(($(QuoteNode(name)), $libarchive),
                           Cint, $types, $(args...))))
+    if length(args) >= 1
+        error_expr = :(_la_error(status, $(args[1])))
+    else
+        error_expr = :(_la_error(status))
+    end
     quote
         status = $call_ex
         if status != Status.OK
-            _la_error(status)
+            $error_expr
         end
     end
 end
