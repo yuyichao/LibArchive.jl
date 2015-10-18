@@ -233,3 +233,29 @@ function next_header(archive::Reader)
               archive, entry)
     entry
 end
+
+"""
+Retrieve the byte offset in UNCOMPRESSED data where last-read
+header started.
+"""
+header_position(archive::Reader) =
+    ccall((:archive_read_header_position, libarchive),
+          Int64, (Ptr{Void},), archive)
+
+"Read data from the body of an entry.  Similar to read(2)."
+Base.readbytes!(archive::Reader, b::Vector{UInt8}, nb=length(b)) =
+    ccall((:archive_read_data, libarchive), Cssize_t,
+          (Ptr{Void}, Ptr{Void}, Csize_t), archive, b, nb)
+
+"Seek within the body of an entry.  Similar to lseek(2)."
+Base.seek(archive::Reader, offset, what) =
+    ccall((:archive_seek_data, libarchive), Int64,
+          (Ptr{Void}, Int64, Cint), archive, offset, what)
+
+"Skips entire entry"
+Base.skip(archive::Reader) =
+    @_la_call(archive_read_data_skip, (Ptr{Void},), archive)
+
+"Writes data to specified filedes"
+read_into_fd(archive::Reader, fd::Integer) =
+    @_la_call(archive_read_data_into_fd, (Ptr{Void}, Cint), archive, fd)
