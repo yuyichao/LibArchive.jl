@@ -358,8 +358,11 @@ function verify_archive(reader)
     @test LibArchive.symlink(entry) == "test.txt"
     @test LibArchive.perm(entry) == 0o755
     LibArchive.free(entry)
+
+    @test_throws EOFError LibArchive.next_header(reader)
 end
 
+info("    Filename")
 mktempdir() do d
     cd(d) do
         writer = LibArchive.file_writer("./test.tar.bz2")
@@ -384,6 +387,7 @@ end
 
 @unix_only mktempdir() do d
     cd(d) do
+        info("    FD")
         fd = ccall(:open, Cint, (Cstring, Cint, Cint),
                    "./test.tar.gz",
                    Base.FS.JL_O_WRONLY | Base.FS.JL_O_CREAT, 0o644)
@@ -405,4 +409,23 @@ end
         LibArchive.free(reader)
         ccall(:close, Cint, (Cint,), fd)
     end
+end
+
+info("    In memory")
+let
+    buffer = Vector{UInt8}(4096)
+    writer = LibArchive.mem_writer(buffer)
+    LibArchive.set_format_gnutar(writer)
+    LibArchive.add_filter_lzma(writer)
+    create_archive(writer)
+    close(writer)
+    LibArchive.free(writer)
+    used_size = LibArchive.get_used(writer)
+
+    reader = LibArchive.mem_reader(buffer, used_size)
+    LibArchive.support_filter_lzma(reader)
+    LibArchive.support_format_gnutar(reader)
+    verify_archive(reader)
+    close(reader)
+    LibArchive.free(reader)
 end

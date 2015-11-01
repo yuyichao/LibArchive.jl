@@ -102,19 +102,27 @@ function do_open(archive::Reader{ReadFD})
               archive, data.fd, data.block_size)
 end
 
+# """
+# Use this for reading multivolume files by filenames.
+# NOTE: Must be NULL terminated. Sorting is NOT done.
+# """
+# int archive_read_open_filenames(struct archive*,
+#                                 const char **_filenames, size_t block_size)
+
 ###
 # Open memory
 
 immutable ReadMemory{T}
     data::T
+    size::Int
 end
 
-mem_reader(data) = Reader(ReadMemory(data))
+mem_reader{T}(data::T, size=sizeof(data)) = Reader(ReadMemory{T}(data, size))
 
 function do_open{T}(archive::Reader{ReadMemory{T}})
-    data = archive.data.data
+    data = archive.data
     @_la_call(archive_read_open_memory, (Ptr{Void}, Ptr{Void}, Csize_t),
-              archive, data, sizeof(data))
+              archive, data.data, data.size)
 end
 
 ###
