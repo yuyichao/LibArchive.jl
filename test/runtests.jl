@@ -284,6 +284,28 @@ let
     LibArchive.free(entry)
 end
 
+let
+    # perm and mode
+    entry = LibArchive.Entry()
+
+    LibArchive.set_perm(entry, 0o644)
+    @test LibArchive.perm(entry) == 0o644
+    mode = LibArchive.mode(entry)
+    strmode = LibArchive.strmode(entry)
+    @test mode != 0
+    @test !isempty(strmode)
+    LibArchive.clear(entry)
+
+    LibArchive.set_perm(entry, 0o600)
+    @test LibArchive.perm(entry) == 0o600
+    LibArchive.set_mode(entry, mode)
+    @test LibArchive.perm(entry) == 0o644
+    @test LibArchive.mode(entry) == mode
+    @test LibArchive.strmode(entry) == strmode
+
+    LibArchive.free(entry)
+end
+
 # Create archive
 info("Test creating archive")
 function create_archive(writer)
