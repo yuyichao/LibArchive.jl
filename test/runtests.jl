@@ -96,6 +96,7 @@ let
     reader = LibArchive.Reader(nothing)
     LibArchive.support_filter_bzip2(reader)
     LibArchive.support_filter_compress(reader)
+    # Raise warnings
     # LibArchive.support_filter_grzip(reader)
     # LibArchive.support_filter_lrzip(reader)
     LibArchive.support_filter_lzip(reader)
@@ -104,6 +105,33 @@ let
     LibArchive.support_filter_rpm(reader)
     LibArchive.support_filter_uu(reader)
     LibArchive.support_filter_xz(reader)
+    LibArchive.free(reader)
+
+    reader = LibArchive.Reader(nothing)
+    LibArchive.support_format_all(reader)
+    LibArchive.free(reader)
+
+    reader = LibArchive.Reader(nothing)
+    LibArchive.support_format_7zip(reader)
+    LibArchive.support_format_ar(reader)
+    LibArchive.support_format_by_code(reader, LibArchive.Format._7ZIP)
+    LibArchive.support_format_cab(reader)
+    LibArchive.support_format_cpio(reader)
+    LibArchive.support_format_empty(reader)
+    LibArchive.support_format_gnutar(reader)
+    LibArchive.support_format_iso9660(reader)
+    LibArchive.support_format_lha(reader)
+    LibArchive.support_format_mtree(reader)
+    LibArchive.support_format_rar(reader)
+    LibArchive.support_format_raw(reader)
+    LibArchive.support_format_tar(reader)
+    LibArchive.support_format_xar(reader)
+    LibArchive.support_format_zip(reader)
+    LibArchive.free(reader)
+
+    reader = LibArchive.Reader(nothing)
+    LibArchive.set_format(reader, LibArchive.Format.TAR)
+    LibArchive.free(reader)
 end
 
 # Copy entry
