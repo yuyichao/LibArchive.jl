@@ -6,7 +6,8 @@
 
 # This will be changed to `Cint` in libarchive 4.0
 const _la_mode_t = Cushort
-const _Cdev_t = UInt64
+@unix_only const _Cdev_t = UInt64
+@windows_only const _Cdev_t = Cuint
 
 type Entry
     ptr::Ptr{Void}
@@ -95,14 +96,14 @@ ctime_nsec(entry::Entry) = ccall((:archive_entry_ctime_nsec, libarchive),
                                  Clong, (Ptr{Void},), entry)
 ctime_is_set(entry::Entry) = ccall((:archive_entry_ctime_is_set, libarchive),
                                    Cint, (Ptr{Void},), entry) != 0
-dev(entry::Entry) = ccall((:archive_entry_dev, libarchive),
-                          _Cdev_t, (Ptr{Void},), entry)
+dev(entry::Entry) = UInt64(ccall((:archive_entry_dev, libarchive),
+                                 _Cdev_t, (Ptr{Void},), entry))
 dev_is_set(entry::Entry) = ccall((:archive_entry_dev_is_set, libarchive),
                                  Cint, (Ptr{Void},), entry) != 0
-devmajor(entry::Entry) = ccall((:archive_entry_devmajor, libarchive),
-                               _Cdev_t, (Ptr{Void},), entry)
-devminor(entry::Entry) = ccall((:archive_entry_devminor, libarchive),
-                               _Cdev_t, (Ptr{Void},), entry)
+devmajor(entry::Entry) = UInt64(ccall((:archive_entry_devmajor, libarchive),
+                                      _Cdev_t, (Ptr{Void},), entry))
+devminor(entry::Entry) = UInt64(ccall((:archive_entry_devminor, libarchive),
+                                      _Cdev_t, (Ptr{Void},), entry))
 filetype(entry::Entry) = Cint(ccall((:archive_entry_filetype, libarchive),
                                     _la_mode_t, (Ptr{Void},), entry))
 function fflags(entry::Entry)
@@ -151,11 +152,14 @@ perm(entry::Entry) =
     Cint(ccall((:archive_entry_perm, libarchive),
                _la_mode_t, (Ptr{Void},), entry))
 rdev(entry::Entry) =
-    ccall((:archive_entry_rdev, libarchive), _Cdev_t, (Ptr{Void},), entry)
+    UInt64(ccall((:archive_entry_rdev, libarchive),
+                 _Cdev_t, (Ptr{Void},), entry))
 rdevmajor(entry::Entry) =
-    ccall((:archive_entry_rdevmajor, libarchive), _Cdev_t, (Ptr{Void},), entry)
+    UInt64(ccall((:archive_entry_rdevmajor, libarchive),
+                 _Cdev_t, (Ptr{Void},), entry))
 rdevminor(entry::Entry) =
-    ccall((:archive_entry_rdevminor, libarchive), _Cdev_t, (Ptr{Void},), entry)
+    UInt64(ccall((:archive_entry_rdevminor, libarchive),
+                 _Cdev_t, (Ptr{Void},), entry))
 sourcepath(entry::Entry) =
     bytestring(ccall((:archive_entry_sourcepath, libarchive),
                      Cstring, (Ptr{Void},), entry))
