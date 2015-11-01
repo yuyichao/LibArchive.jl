@@ -339,6 +339,8 @@ function create_archive(writer)
     LibArchive.set_perm(entry, 0o755)
     LibArchive.write_header(writer, entry)
     LibArchive.finish_entry(writer)
+
+    @test LibArchive.file_count(writer) == 2
 end
 
 function verify_archive(reader)
@@ -360,6 +362,7 @@ function verify_archive(reader)
     LibArchive.free(entry)
 
     @test_throws EOFError LibArchive.next_header(reader)
+    @test LibArchive.file_count(reader) == 2
 end
 
 info("    Filename")

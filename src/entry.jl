@@ -159,7 +159,7 @@ rdevminor(entry::Entry) =
 sourcepath(entry::Entry) =
     bytestring(ccall((:archive_entry_sourcepath, libarchive),
                      Cstring, (Ptr{Void},), entry))
-size(entry::Entry) =
+Base.size(entry::Entry) =
     ccall((:archive_entry_size, libarchive), Int64, (Ptr{Void},), entry)
 size_is_set(entry::Entry) =
     ccall((:archive_entry_size_is_set, libarchive),

@@ -44,7 +44,7 @@ copy_error(dest::Archive, src::Archive) =
     ccall((:archive_copy_error, libarchive),
           Void, (Ptr{Void}, Ptr{Void}), dest, src)
 file_count(archive::Archive) =
-    ccall((:archive_file_count, libarchive), Void, (Ptr{Void},), archive)
+    ccall((:archive_file_count, libarchive), Cint, (Ptr{Void},), archive)
 
 function check_objptr{T}(ptr::Ptr{T}, c_archive::Ptr{Void})
     if !isa(unsafe_pointer_to_objref(ptr), T)
