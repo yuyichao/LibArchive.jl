@@ -306,6 +306,20 @@ let
     LibArchive.free(entry)
 end
 
+let
+    # size
+    entry = LibArchive.Entry()
+
+    @test !LibArchive.size_is_set(entry)
+    LibArchive.set_size(entry, 100)
+    @test LibArchive.size_is_set(entry)
+    @test LibArchive.size(entry) == 100
+    LibArchive.unset_size(entry)
+    @test !LibArchive.size_is_set(entry)
+
+    LibArchive.free(entry)
+end
+
 # Create archive
 info("Test creating archive")
 function create_archive(writer)
