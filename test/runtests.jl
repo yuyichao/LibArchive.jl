@@ -321,7 +321,7 @@ let
 end
 
 # Create archive
-info("Test creating archive")
+info("Test creating and reading archive")
 function create_archive(writer)
     entry = LibArchive.Entry(writer)
     LibArchive.set_pathname(entry, "test.txt")
@@ -331,6 +331,33 @@ function create_archive(writer)
     LibArchive.write_header(writer, entry)
     LibArchive.write_data(writer, ("0123456789").data)
     LibArchive.finish_entry(writer)
+
+    entry = LibArchive.Entry(writer)
+    LibArchive.set_pathname(entry, "test_α.txt")
+    LibArchive.set_filetype(entry, LibArchive.FileType.LNK)
+    LibArchive.set_symlink(entry, "test.txt")
+    LibArchive.set_perm(entry, 0o755)
+    LibArchive.write_header(writer, entry)
+    LibArchive.finish_entry(writer)
+end
+
+function verify_archive(reader)
+    entry = LibArchive.next_header(reader)
+    @test LibArchive.pathname(entry) == "test.txt"
+    @test LibArchive.size(entry) == 10
+    @test LibArchive.perm(entry) == 0o644
+    @test LibArchive.filetype(entry) == LibArchive.FileType.REG
+    data = Vector{UInt8}(10)
+    @test LibArchive.readbytes!(reader, data) == 10
+    @test data == ("0123456789").data
+    LibArchive.free(entry)
+
+    entry = LibArchive.next_header(reader)
+    @test LibArchive.pathname(entry) == "test_α.txt"
+    @test LibArchive.filetype(entry) == LibArchive.FileType.LNK
+    @test LibArchive.symlink(entry) == "test.txt"
+    @test LibArchive.perm(entry) == 0o755
+    LibArchive.free(entry)
 end
 
 mktempdir() do d
@@ -345,5 +372,12 @@ mktempdir() do d
         create_archive(writer)
         close(writer)
         LibArchive.free(writer)
+
+        reader = LibArchive.file_reader("./test.tar.bz2")
+        LibArchive.support_filter_bzip2(reader)
+        LibArchive.support_format_gnutar(reader)
+        verify_archive(reader)
+        close(reader)
+        LibArchive.free(reader)
     end
 end
