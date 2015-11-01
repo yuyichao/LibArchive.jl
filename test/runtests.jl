@@ -59,23 +59,42 @@ end
 info("Test deepcopy of Entry")
 let
     entry = LibArchive.Entry()
-    LibArchive.set_pathname(entry, "test.txt")
+    @test !LibArchive.size_is_set(entry)
+    LibArchive.set_pathname(entry, "α.txt")
     LibArchive.set_size(entry, 10)
     LibArchive.set_perm(entry, 0o644)
     LibArchive.set_filetype(entry, LibArchive.FileType.REG)
 
-    @test LibArchive.pathname(entry) == "test.txt"
+    @test LibArchive.pathname(entry) == "α.txt"
     @test LibArchive.size(entry) == 10
     @test LibArchive.size_is_set(entry)
     @test LibArchive.perm(entry) == 0o644
     @test LibArchive.filetype(entry) == LibArchive.FileType.REG
 
     entry_cp = deepcopy(entry)
-    @test LibArchive.pathname(entry_cp) == "test.txt"
+    @test LibArchive.pathname(entry_cp) == "α.txt"
     @test LibArchive.size(entry_cp) == 10
     @test LibArchive.size_is_set(entry_cp)
     @test LibArchive.perm(entry_cp) == 0o644
     @test LibArchive.filetype(entry_cp) == LibArchive.FileType.REG
+
+    LibArchive.clear(entry)
+    LibArchive.free(entry)
+    LibArchive.free(entry_cp)
+end
+
+# Entry properties
+info("Test Entry properties")
+let
+    entry = LibArchive.Entry()
+    t = floor(Int, time())
+    ns = rand(1:(10^8))
+
+    @test !LibArchive.atime_is_set(entry)
+    LibArchive.set_atime(entry, t, ns)
+    @test LibArchive.atime_is_set(entry)
+    @test LibArchive.atime(entry) == t
+    @test LibArchive.atime_nsec(entry) == ns
 end
 
 # Create archive

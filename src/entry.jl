@@ -76,13 +76,13 @@ Base.unsafe_convert(::Type{Ptr{Void}}, entry::Entry) = entry.ptr
 # This is usually what you want.
 
 atime(entry::Entry) = ccall((:archive_entry_atime, libarchive),
-                            Libc.TmStruct, (Ptr{Void},), entry)
+                            Int, (Ptr{Void},), entry)
 atime_nsec(entry::Entry) = ccall((:archive_entry_atime_nsec, libarchive),
                                  Clong, (Ptr{Void},), entry)
 atime_is_set(entry::Entry) = ccall((:archive_entry_atime_is_set, libarchive),
                                    Cint, (Ptr{Void},), entry) != 0
 birthtime(entry::Entry) = ccall((:archive_entry_birthtime, libarchive),
-                                Libc.TmStruct, (Ptr{Void},), entry)
+                                Int, (Ptr{Void},), entry)
 birthtime_nsec(entry::Entry) =
     ccall((:archive_entry_birthtime_nsec, libarchive),
           Clong, (Ptr{Void},), entry)
@@ -90,7 +90,7 @@ birthtime_is_set(entry::Entry) =
     ccall((:archive_entry_birthtime_is_set, libarchive),
           Cint, (Ptr{Void},), entry) != 0
 ctime(entry::Entry) = ccall((:archive_entry_ctime, libarchive),
-                            Libc.TmStruct, (Ptr{Void},), entry)
+                            Int, (Ptr{Void},), entry)
 ctime_nsec(entry::Entry) = ccall((:archive_entry_ctime_nsec, libarchive),
                                  Clong, (Ptr{Void},), entry)
 ctime_is_set(entry::Entry) = ccall((:archive_entry_ctime_is_set, libarchive),
@@ -135,7 +135,7 @@ mode(entry::Entry) =
                _la_mode_t, (Ptr{Void},), entry))
 
 mtime(entry::Entry) = ccall((:archive_entry_mtime, libarchive),
-                            Libc.TmStruct, (Ptr{Void},), entry)
+                            Int, (Ptr{Void},), entry)
 mtime_nsec(entry::Entry) = ccall((:archive_entry_mtime_nsec, libarchive),
                                  Clong, (Ptr{Void},), entry)
 mtime_is_set(entry::Entry) = ccall((:archive_entry_mtime_is_set, libarchive),
@@ -178,18 +178,18 @@ uname(entry::Entry) =
 
 set_atime(entry::Entry, t, ns) =
     ccall((:archive_entry_set_atime, libarchive),
-          Void, (Ptr{Void}, TmStruct, Clong), entry, t, ns)
+          Void, (Ptr{Void}, Int, Clong), entry, t, ns)
 unset_atime(entry::Entry) =
     ccall((:archive_entry_unset_atime, libarchive), Void, (Ptr{Void},), entry)
 set_birthtime(entry::Entry, t, ns) =
     ccall((:archive_entry_set_birthtime, libarchive),
-          Void, (Ptr{Void}, TmStruct, Clong), entry, t, ns)
+          Void, (Ptr{Void}, Int, Clong), entry, t, ns)
 unset_birthtime(entry::Entry) =
     ccall((:archive_entry_unset_birthtime, libarchive),
           Void, (Ptr{Void},), entry)
 set_ctime(entry::Entry, t, ns) =
     ccall((:archive_entry_set_ctime, libarchive),
-          Void, (Ptr{Void}, TmStruct, Clong), entry, t, ns)
+          Void, (Ptr{Void}, Int, Clong), entry, t, ns)
 unset_ctime(entry::Entry) =
     ccall((:archive_entry_unset_ctime, libarchive), Void, (Ptr{Void},), entry)
 set_dev(entry::Entry, dev) =
@@ -239,7 +239,7 @@ set_mode(entry::Entry, mode) =
           Void, (Ptr{Void}, _la_mode_t), entry, mode)
 set_mtime(entry::Entry, t, ns) =
     ccall((:archive_entry_set_mtime, libarchive),
-          Void, (Ptr{Void}, TmStruct, Clong), entry, t, ns)
+          Void, (Ptr{Void}, Int, Clong), entry, t, ns)
 unset_mtime(entry::Entry) =
     ccall((:archive_entry_unset_mtime, libarchive), Void, (Ptr{Void},), entry)
 set_nlink(entry::Entry, nlink) =
