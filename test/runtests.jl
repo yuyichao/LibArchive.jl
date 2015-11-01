@@ -229,6 +229,45 @@ let
     LibArchive.free(entry)
 end
 
+let
+    # hardlink, pathname, sourcepath, symlink
+    entry = LibArchive.Entry()
+
+    @test_throws ArgumentError LibArchive.hardlink(entry)
+    LibArchive.set_hardlink(entry, "hard_link1")
+    @test LibArchive.hardlink(entry) == "hard_link1"
+    LibArchive.set_hardlink(entry, "Hard Link α")
+    @test LibArchive.hardlink(entry) == "Hard Link α"
+    LibArchive.clear(entry)
+    @test_throws ArgumentError LibArchive.hardlink(entry)
+
+    @test_throws ArgumentError LibArchive.pathname(entry)
+    LibArchive.set_pathname(entry, "path_name2")
+    @test LibArchive.pathname(entry) == "path_name2"
+    LibArchive.set_pathname(entry, "Path Name β")
+    @test LibArchive.pathname(entry) == "Path Name β"
+    LibArchive.clear(entry)
+    @test_throws ArgumentError LibArchive.pathname(entry)
+
+    @test_throws ArgumentError LibArchive.sourcepath(entry)
+    LibArchive.set_sourcepath(entry, "source_path3")
+    @test LibArchive.sourcepath(entry) == "source_path3"
+    LibArchive.set_sourcepath(entry, "Source Path γ")
+    @test LibArchive.sourcepath(entry) == "Source Path γ"
+    LibArchive.clear(entry)
+    @test_throws ArgumentError LibArchive.sourcepath(entry)
+
+    @test_throws ArgumentError LibArchive.symlink(entry)
+    LibArchive.set_symlink(entry, "sym_link4")
+    @test LibArchive.symlink(entry) == "sym_link4"
+    LibArchive.set_symlink(entry, "Sym Link δ")
+    @test LibArchive.symlink(entry) == "Sym Link δ"
+    LibArchive.clear(entry)
+    @test_throws ArgumentError LibArchive.symlink(entry)
+
+    LibArchive.free(entry)
+end
+
 # Create archive
 info("Test creating archive")
 function create_archive(writer)
