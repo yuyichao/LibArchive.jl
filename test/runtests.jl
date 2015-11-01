@@ -4,9 +4,11 @@ using LibArchive
 using Base.Test
 
 ## Version
+info("Test version")
 @test isa(LibArchive.version(), VersionNumber)
 
 ## Error
+info("Test error translation")
 @test_throws EOFError LibArchive._la_error(LibArchive.Status.EOF)
 @test_throws ArchiveRetry LibArchive._la_error(LibArchive.Status.RETRY)
 @test_throws ArchiveWarn LibArchive._la_error(LibArchive.Status.WARN)
@@ -14,6 +16,7 @@ using Base.Test
 @test_throws ArchiveFatal LibArchive._la_error(LibArchive.Status.FATAL)
 
 ## Reader error
+info("Test reader error handling")
 let
     archive_reader = LibArchive.Reader(nothing)
     @test archive_reader.ptr != C_NULL
@@ -33,6 +36,7 @@ let
 end
 
 # Writer error
+info("Test writer error handling")
 let
     archive_writer = LibArchive.Writer(nothing)
     @test archive_writer.ptr != C_NULL
@@ -51,19 +55,29 @@ let
     @test !isempty(ex.msg)
 end
 
+# Create archive
+info("Test creating archive")
+function create_archive(writer)
+    entry = LibArchive.Entry(writer)
+    LibArchive.set_pathname(entry, "test.txt")
+    LibArchive.set_size(entry, 10)
+    LibArchive.set_perm(entry, 0o644)
+    LibArchive.set_filetype(entry, LibArchive.FileType.REG)
+    LibArchive.write_header(writer, entry)
+    LibArchive.write_data(writer, ("0123456789").data)
+    LibArchive.finish_entry(writer)
+end
+
 mktempdir() do d
     cd(d) do
         writer = LibArchive.file_writer("./test.tar.bz2")
         LibArchive.set_format_gnutar(writer)
         LibArchive.add_filter_bzip2(writer)
-        entry = LibArchive.Entry(writer)
-        LibArchive.set_pathname(entry, "test.txt")
-        LibArchive.set_size(entry, 10)
-        LibArchive.set_perm(entry, 0o644)
-        LibArchive.set_filetype(entry, LibArchive.FileType.REG)
-        LibArchive.write_header(writer, entry)
-        LibArchive.write_data(writer, ("0123456789").data)
-        LibArchive.finish_entry(writer)
+        LibArchive.set_bytes_per_block(writer, 4096)
+        @test LibArchive.get_bytes_per_block(writer) == 4096
+        LibArchive.set_bytes_in_last_block(writer, 1)
+        @test LibArchive.get_bytes_in_last_block(writer) == 1
+        create_archive(writer)
         close(writer)
         LibArchive.free(writer)
     end
