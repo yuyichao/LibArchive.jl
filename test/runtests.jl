@@ -13,14 +13,42 @@ using Base.Test
 @test_throws ArchiveFailed LibArchive._la_error(LibArchive.Status.FAILED)
 @test_throws ArchiveFatal LibArchive._la_error(LibArchive.Status.FATAL)
 
-## Read
+## Reader error
 let
-    archive_read = LibArchive.Reader(nothing)
-    @test archive_read.ptr != C_NULL
-    LibArchive.free(archive_read)
-    @test archive_read.ptr == C_NULL
-    LibArchive.free(archive_read)
-    @test_throws ErrorException LibArchive.support_filter_all(archive_read)
+    archive_reader = LibArchive.Reader(nothing)
+    @test archive_reader.ptr != C_NULL
+    LibArchive.free(archive_reader)
+    @test archive_reader.ptr == C_NULL
+    LibArchive.free(archive_reader)
+    @test_throws ErrorException LibArchive.support_filter_all(archive_reader)
+
+    archive_reader = LibArchive.file_reader("/this_file_does_not_exist")
+    local ex
+    try
+        LibArchive.next_header(archive_reader)
+    catch ex
+    end
+    @test isa(ex, LibArchive.ArchiveFatal)
+    @test !isempty(ex.msg)
+end
+
+# Writer error
+let
+    archive_writer = LibArchive.Writer(nothing)
+    @test archive_writer.ptr != C_NULL
+    LibArchive.free(archive_writer)
+    @test archive_writer.ptr == C_NULL
+    LibArchive.free(archive_writer)
+    @test_throws ErrorException LibArchive.add_filter_bzip2(archive_writer)
+
+    archive_writer = LibArchive.file_writer("/this_dir_does_not_exist/file")
+    local ex
+    try
+        LibArchive.finish_entry(archive_writer)
+    catch ex
+    end
+    @test isa(ex, LibArchive.ArchiveFatal)
+    @test !isempty(ex.msg)
 end
 
 mktempdir() do d
