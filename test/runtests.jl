@@ -100,8 +100,7 @@ let
     # LibArchive.support_filter_grzip(reader)
     # LibArchive.support_filter_lrzip(reader)
     LibArchive.support_filter_lzip(reader)
-    # Not available on travis yet
-    # LibArchive.support_filter_lzop(reader)
+    LibArchive.support_filter_lzop(reader)
     LibArchive.support_filter_rpm(reader)
     LibArchive.support_filter_uu(reader)
     LibArchive.support_filter_xz(reader)

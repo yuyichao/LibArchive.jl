@@ -1,6 +1,8 @@
 language: julia
 os:
   - linux
+sudo: required
+dist: trusty
 julia:
   - 0.4
   - nightly
