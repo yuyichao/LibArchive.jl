@@ -25,9 +25,11 @@ filter_name(archive::Archive, n) =
 
 Base.errno(archive::Archive) =
     ccall((:archive_errno, libarchive), Cint, (Ptr{Void},), archive)
-error_string(archive::Archive) =
-    bytestring(ccall((:archive_error_string, libarchive),
-                     Cstring, (Ptr{Void},), archive))
+function error_string(archive::Archive)
+    cstr = ccall((:archive_error_string, libarchive),
+                 Ptr{UInt8}, (Ptr{Void},), archive)
+    cstr == C_NULL ? "" : bytestring(cstr)
+end
 format_name(archive::Archive) =
     bytestring(ccall((:archive_format_name, libarchive),
                      Cstring, (Ptr{Void},), archive))

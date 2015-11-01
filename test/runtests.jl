@@ -381,3 +381,28 @@ mktempdir() do d
         LibArchive.free(reader)
     end
 end
+
+@unix_only mktempdir() do d
+    cd(d) do
+        fd = ccall(:open, Cint, (Cstring, Cint, Cint),
+                   "./test.tar.gz",
+                   Base.FS.JL_O_WRONLY | Base.FS.JL_O_CREAT, 0o644)
+        writer = LibArchive.file_writer(fd)
+        LibArchive.set_format_gnutar(writer)
+        LibArchive.add_filter_gzip(writer)
+        create_archive(writer)
+        close(writer)
+        LibArchive.free(writer)
+        ccall(:close, Cint, (Cint,), fd)
+
+        fd = ccall(:open, Cint, (Cstring, Cint),
+                   "./test.tar.gz", Base.FS.JL_O_RDONLY)
+        reader = LibArchive.file_reader(fd)
+        LibArchive.support_filter_gzip(reader)
+        LibArchive.support_format_gnutar(reader)
+        verify_archive(reader)
+        close(reader)
+        LibArchive.free(reader)
+        ccall(:close, Cint, (Cint,), fd)
+    end
+end
