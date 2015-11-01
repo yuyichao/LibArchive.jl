@@ -253,7 +253,7 @@ let
     LibArchive.free(entry)
 end
 
-let
+@unix_only let
     # fflags
     entry = LibArchive.Entry()
     @test_throws ArgumentError LibArchive.fflags_text(entry)
