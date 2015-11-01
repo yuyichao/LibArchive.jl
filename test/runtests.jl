@@ -178,6 +178,27 @@ let
     LibArchive.free(entry)
 end
 
+let
+    # fflags
+    entry = LibArchive.Entry()
+    @test_throws ArgumentError LibArchive.fflags_text(entry)
+
+    LibArchive.set_fflags(entry, 1, 2)
+    @test LibArchive.fflags(entry) == (1, 2)
+    flags_txt = LibArchive.fflags_text(entry)
+    @test !isempty(flags_txt)
+
+    LibArchive.free(entry)
+
+    entry2 = LibArchive.Entry()
+    @test_throws ArgumentError LibArchive.fflags_text(entry2)
+    LibArchive.set_fflags(entry2, flags_txt)
+    @test LibArchive.fflags(entry2) == (1, 2)
+    @test LibArchive.fflags_text(entry2) == flags_txt
+
+    LibArchive.free(entry2)
+end
+
 # Create archive
 info("Test creating archive")
 function create_archive(writer)
