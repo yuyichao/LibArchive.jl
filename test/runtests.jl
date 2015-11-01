@@ -95,6 +95,32 @@ let
     @test LibArchive.atime_is_set(entry)
     @test LibArchive.atime(entry) == t
     @test LibArchive.atime_nsec(entry) == ns
+    LibArchive.unset_atime(entry)
+    @test !LibArchive.atime_is_set(entry)
+
+    @test !LibArchive.birthtime_is_set(entry)
+    LibArchive.set_birthtime(entry, t, ns)
+    @test LibArchive.birthtime_is_set(entry)
+    @test LibArchive.birthtime(entry) == t
+    @test LibArchive.birthtime_nsec(entry) == ns
+    LibArchive.unset_birthtime(entry)
+    @test !LibArchive.birthtime_is_set(entry)
+
+    @test !LibArchive.ctime_is_set(entry)
+    LibArchive.set_ctime(entry, t, ns)
+    @test LibArchive.ctime_is_set(entry)
+    @test LibArchive.ctime(entry) == t
+    @test LibArchive.ctime_nsec(entry) == ns
+    LibArchive.unset_ctime(entry)
+    @test !LibArchive.ctime_is_set(entry)
+
+    @test !LibArchive.mtime_is_set(entry)
+    LibArchive.set_mtime(entry, t, ns)
+    @test LibArchive.mtime_is_set(entry)
+    @test LibArchive.mtime(entry) == t
+    @test LibArchive.mtime_nsec(entry) == ns
+    LibArchive.unset_mtime(entry)
+    @test !LibArchive.mtime_is_set(entry)
 end
 
 # Create archive
