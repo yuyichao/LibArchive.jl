@@ -206,7 +206,7 @@ end
 let
     # dev number
     entry = LibArchive.Entry()
-    dev1 = rand(UInt64)
+    dev1 = UInt64(rand(UInt32))
     # There doesn't seem to be a portable way to convert between minor and
     # major dev_t and the full dev_t
     devmajor2 = UInt64(rand(UInt8))
