@@ -18,6 +18,7 @@ libarchive = library_dependency("libarchive",
 @linux_only begin
     provides(Pacman, "libarchive", libarchive)
     provides(AptGet, "libarchive12", libarchive)
+    provides(Yum, "libarchive", libarchive)
 end
 
 @windows_only begin
