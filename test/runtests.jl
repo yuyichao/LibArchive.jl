@@ -86,6 +86,7 @@ end
 # Entry properties
 info("Test Entry properties")
 let
+    # Time stamps
     entry = LibArchive.Entry()
     t = floor(Int, time())
     ns = rand(1:(10^8))
@@ -121,6 +122,60 @@ let
     @test LibArchive.mtime_nsec(entry) == ns
     LibArchive.unset_mtime(entry)
     @test !LibArchive.mtime_is_set(entry)
+
+    LibArchive.clear(entry)
+    @test !LibArchive.atime_is_set(entry)
+    @test !LibArchive.birthtime_is_set(entry)
+    @test !LibArchive.ctime_is_set(entry)
+    @test !LibArchive.mtime_is_set(entry)
+    LibArchive.free(entry)
+    @test_throws ErrorException LibArchive.atime_is_set(entry)
+end
+
+let
+    # dev number
+    entry = LibArchive.Entry()
+    dev1 = rand(UInt64)
+    # There doesn't seem to be a portable way to convert between minor and
+    # major dev_t and the full dev_t
+    devmajor2 = UInt64(rand(UInt8))
+    devminor2 = UInt64(rand(UInt8))
+
+    @test !LibArchive.dev_is_set(entry)
+    LibArchive.set_dev(entry, dev1)
+    @test LibArchive.dev_is_set(entry)
+    @test LibArchive.dev(entry) == dev1
+    LibArchive.set_devmajor(entry, devmajor2)
+    LibArchive.set_devminor(entry, devminor2)
+    @test LibArchive.dev_is_set(entry)
+    @test LibArchive.devmajor(entry) == devmajor2
+    @test LibArchive.devminor(entry) == devminor2
+
+    LibArchive.set_rdev(entry, dev1)
+    @test LibArchive.rdev(entry) == dev1
+    LibArchive.set_rdevmajor(entry, devmajor2)
+    LibArchive.set_rdevminor(entry, devminor2)
+    @test LibArchive.rdevmajor(entry) == devmajor2
+    @test LibArchive.rdevminor(entry) == devminor2
+
+    LibArchive.clear(entry)
+    @test !LibArchive.dev_is_set(entry)
+    LibArchive.free(entry)
+end
+
+let
+    # file type
+    entry = LibArchive.Entry()
+
+    for ft in (LibArchive.FileType.MT, LibArchive.FileType.REG,
+               LibArchive.FileType.LNK, LibArchive.FileType.SOCK,
+               LibArchive.FileType.CHR, LibArchive.FileType.BLK,
+               LibArchive.FileType.DIR, LibArchive.FileType.IFO)
+        LibArchive.set_filetype(entry, ft)
+        @test LibArchive.filetype(entry) == ft
+    end
+
+    LibArchive.free(entry)
 end
 
 # Create archive
