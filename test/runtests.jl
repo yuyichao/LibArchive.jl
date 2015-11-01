@@ -268,6 +268,22 @@ let
     LibArchive.free(entry)
 end
 
+let
+    # ino and nlink
+    entry = LibArchive.Entry()
+
+    @test !LibArchive.ino_is_set(entry)
+    LibArchive.set_ino(entry, 2345)
+    @test LibArchive.ino(entry) == 2345
+    LibArchive.set_nlink(entry, 10)
+    @test LibArchive.nlink(entry) == 10
+
+    LibArchive.clear(entry)
+    @test !LibArchive.ino_is_set(entry)
+
+    LibArchive.free(entry)
+end
+
 # Create archive
 info("Test creating archive")
 function create_archive(writer)
