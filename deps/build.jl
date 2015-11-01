@@ -11,7 +11,8 @@ function validate_libarchive(name, handle)
     end
 end
 
-libarchive = library_dependency("libarchive", aliases = ["libarchive"],
+libarchive = library_dependency("libarchive",
+                                aliases=["libarchive", "libarchive-12"],
                                 validate=validate_libarchive)
 
 @linux_only begin
