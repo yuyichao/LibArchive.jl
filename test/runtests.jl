@@ -90,10 +90,12 @@ let
     reader = LibArchive.Reader(nothing)
     LibArchive.support_filter_bzip2(reader)
     LibArchive.support_filter_compress(reader)
-    LibArchive.support_filter_grzip(reader)
-    LibArchive.support_filter_lrzip(reader)
-    LibArchive.support_filter_lzip(reader)
-    LibArchive.support_filter_lzop(reader)
+    if LibArchive.version() >= v"3.1.0"
+        LibArchive.support_filter_grzip(reader)
+        LibArchive.support_filter_lrzip(reader)
+        LibArchive.support_filter_lzip(reader)
+        LibArchive.support_filter_lzop(reader)
+    end
     LibArchive.support_filter_rpm(reader)
     LibArchive.support_filter_uu(reader)
     LibArchive.support_filter_xz(reader)
@@ -121,9 +123,11 @@ let
     LibArchive.support_format_zip(reader)
     LibArchive.free(reader)
 
-    reader = LibArchive.Reader(nothing)
-    LibArchive.set_format(reader, LibArchive.Format.TAR)
-    LibArchive.free(reader)
+    if LibArchive.version() >= v"3.1.0"
+        reader = LibArchive.Reader(nothing)
+        LibArchive.set_format(reader, LibArchive.Format.TAR)
+        LibArchive.free(reader)
+    end
 end
 
 # Copy entry
