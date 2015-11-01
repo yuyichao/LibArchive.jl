@@ -87,6 +87,25 @@ let
     @test !isempty(ex.msg)
 end
 
+info("Test availability of filters and formats")
+let
+    reader = LibArchive.Reader(nothing)
+    LibArchive.support_filter_all(reader)
+    LibArchive.free(reader)
+
+    reader = LibArchive.Reader(nothing)
+    LibArchive.support_filter_bzip2(reader)
+    LibArchive.support_filter_compress(reader)
+    # LibArchive.support_filter_grzip(reader)
+    # LibArchive.support_filter_lrzip(reader)
+    LibArchive.support_filter_lzip(reader)
+    # Not available on travis yet
+    # LibArchive.support_filter_lzop(reader)
+    LibArchive.support_filter_rpm(reader)
+    LibArchive.support_filter_uu(reader)
+    LibArchive.support_filter_xz(reader)
+end
+
 # Copy entry
 info("Test deepcopy of Entry")
 let
@@ -415,6 +434,10 @@ mktempdir() do d
         LibArchive.support_filter_bzip2(reader)
         LibArchive.support_format_gnutar(reader)
         verify_archive(reader)
+        @test LibArchive.filter_count(reader) > 0
+        LibArchive.filter_bytes(reader, 0)
+        @test LibArchive.filter_code(reader, 0) == LibArchive.FilterType.BZIP2
+        @test LibArchive.filter_name(reader, 0) == "bzip2"
         close(reader)
         LibArchive.free(reader)
     end
