@@ -199,6 +199,36 @@ let
     LibArchive.free(entry2)
 end
 
+let
+    # ids/names
+    entry = LibArchive.Entry()
+    @test_throws ArgumentError LibArchive.gname(entry)
+    @test_throws ArgumentError LibArchive.uname(entry)
+
+    LibArchive.set_gid(entry, 2000)
+    LibArchive.set_uid(entry, 2002)
+    @test LibArchive.gid(entry) == 2000
+    @test LibArchive.uid(entry) == 2002
+    @test_throws ArgumentError LibArchive.gname(entry)
+    @test_throws ArgumentError LibArchive.uname(entry)
+
+    LibArchive.set_gname(entry, "group_name1")
+    @test LibArchive.gname(entry) == "group_name1"
+    LibArchive.set_gname(entry, "Group αβ")
+    @test LibArchive.gname(entry) == "Group αβ"
+
+    LibArchive.set_uname(entry, "user_name1")
+    @test LibArchive.uname(entry) == "user_name1"
+    LibArchive.set_uname(entry, "User γδ")
+    @test LibArchive.uname(entry) == "User γδ"
+
+    LibArchive.clear(entry)
+    @test_throws ArgumentError LibArchive.gname(entry)
+    @test_throws ArgumentError LibArchive.uname(entry)
+
+    LibArchive.free(entry)
+end
+
 # Create archive
 info("Test creating archive")
 function create_archive(writer)
