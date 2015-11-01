@@ -135,19 +135,19 @@ info("Test deepcopy of Entry")
 let
     entry = LibArchive.Entry()
     @test !LibArchive.size_is_set(entry)
-    LibArchive.set_pathname(entry, "α.txt")
+    LibArchive.set_pathname(entry, "a.txt")
     LibArchive.set_size(entry, 10)
     LibArchive.set_perm(entry, 0o644)
     LibArchive.set_filetype(entry, LibArchive.FileType.REG)
 
-    @test LibArchive.pathname(entry) == "α.txt"
+    @test LibArchive.pathname(entry) == "a.txt"
     @test LibArchive.size(entry) == 10
     @test LibArchive.size_is_set(entry)
     @test LibArchive.perm(entry) == 0o644
     @test LibArchive.filetype(entry) == LibArchive.FileType.REG
 
     entry_cp = deepcopy(entry)
-    @test LibArchive.pathname(entry_cp) == "α.txt"
+    @test LibArchive.pathname(entry_cp) == "a.txt"
     @test LibArchive.size(entry_cp) == 10
     @test LibArchive.size_is_set(entry_cp)
     @test LibArchive.perm(entry_cp) == 0o644
@@ -289,13 +289,17 @@ let
 
     LibArchive.set_gname(entry, "group_name1")
     @test LibArchive.gname(entry) == "group_name1"
-    LibArchive.set_gname(entry, "Group αβ")
-    @test LibArchive.gname(entry) == "Group αβ"
+    @unix_only begin
+        LibArchive.set_gname(entry, "Group αβ")
+        @test LibArchive.gname(entry) == "Group αβ"
+    end
 
     LibArchive.set_uname(entry, "user_name1")
     @test LibArchive.uname(entry) == "user_name1"
-    LibArchive.set_uname(entry, "User γδ")
-    @test LibArchive.uname(entry) == "User γδ"
+    @unix_only begin
+        LibArchive.set_uname(entry, "User γδ")
+        @test LibArchive.uname(entry) == "User γδ"
+    end
 
     LibArchive.clear(entry)
     @test_throws ArgumentError LibArchive.gname(entry)
@@ -311,32 +315,40 @@ let
     @test_throws ArgumentError LibArchive.hardlink(entry)
     LibArchive.set_hardlink(entry, "hard_link1")
     @test LibArchive.hardlink(entry) == "hard_link1"
-    LibArchive.set_hardlink(entry, "Hard Link α")
-    @test LibArchive.hardlink(entry) == "Hard Link α"
+    @unix_only begin
+        LibArchive.set_hardlink(entry, "Hard Link α")
+        @test LibArchive.hardlink(entry) == "Hard Link α"
+    end
     LibArchive.clear(entry)
     @test_throws ArgumentError LibArchive.hardlink(entry)
 
     @test_throws ArgumentError LibArchive.pathname(entry)
     LibArchive.set_pathname(entry, "path_name2")
     @test LibArchive.pathname(entry) == "path_name2"
-    LibArchive.set_pathname(entry, "Path Name β")
-    @test LibArchive.pathname(entry) == "Path Name β"
+    @unix_only begin
+        LibArchive.set_pathname(entry, "Path Name β")
+        @test LibArchive.pathname(entry) == "Path Name β"
+    end
     LibArchive.clear(entry)
     @test_throws ArgumentError LibArchive.pathname(entry)
 
     @test_throws ArgumentError LibArchive.sourcepath(entry)
     LibArchive.set_sourcepath(entry, "source_path3")
     @test LibArchive.sourcepath(entry) == "source_path3"
-    LibArchive.set_sourcepath(entry, "Source Path γ")
-    @test LibArchive.sourcepath(entry) == "Source Path γ"
+    @unix_only begin
+        LibArchive.set_sourcepath(entry, "Source Path γ")
+        @test LibArchive.sourcepath(entry) == "Source Path γ"
+    end
     LibArchive.clear(entry)
     @test_throws ArgumentError LibArchive.sourcepath(entry)
 
     @test_throws ArgumentError LibArchive.symlink(entry)
     LibArchive.set_symlink(entry, "sym_link4")
     @test LibArchive.symlink(entry) == "sym_link4"
-    LibArchive.set_symlink(entry, "Sym Link δ")
-    @test LibArchive.symlink(entry) == "Sym Link δ"
+    @unix_only begin
+        LibArchive.set_symlink(entry, "Sym Link δ")
+        @test LibArchive.symlink(entry) == "Sym Link δ"
+    end
     LibArchive.clear(entry)
     @test_throws ArgumentError LibArchive.symlink(entry)
 
@@ -408,7 +420,7 @@ function create_archive(writer)
     LibArchive.finish_entry(writer)
 
     entry = LibArchive.Entry(writer)
-    LibArchive.set_pathname(entry, "test_α.txt")
+    LibArchive.set_pathname(entry, "test_a.txt")
     LibArchive.set_filetype(entry, LibArchive.FileType.LNK)
     LibArchive.set_symlink(entry, "test.txt")
     LibArchive.set_perm(entry, 0o755)
@@ -430,7 +442,7 @@ function verify_archive(reader)
     LibArchive.free(entry)
 
     entry = LibArchive.next_header(reader)
-    @test LibArchive.pathname(entry) == "test_α.txt"
+    @test LibArchive.pathname(entry) == "test_a.txt"
     @test LibArchive.filetype(entry) == LibArchive.FileType.LNK
     @test LibArchive.symlink(entry) == "test.txt"
     @test LibArchive.perm(entry) == 0o755
