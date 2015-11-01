@@ -4,9 +4,6 @@
 immutable ArchiveRetry <: Exception
     msg
 end
-immutable ArchiveWarn <: Exception
-    msg
-end
 immutable ArchiveFailed <: Exception
     msg
 end
@@ -20,7 +17,10 @@ _la_error_msg(other) = ""
 @noinline function _la_error(err::Cint, obj=nothing)
     err == Status.EOF && throw(EOFError())
     err == Status.RETRY && throw(ArchiveRetry(_la_error_msg(obj)))
-    err == Status.WARN && throw(ArchiveWarn(_la_error_msg(obj)))
+    if err == Status.WARN
+        warn("LibArchive: $(_la_error_msg(obj))")
+        return
+    end
     err == Status.FAILED && throw(ArchiveFailed(_la_error_msg(obj)))
     err == Status.FATAL && throw(ArchiveFatal(_la_error_msg(obj)))
     error("Unknown error $err")

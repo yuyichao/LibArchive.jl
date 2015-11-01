@@ -11,7 +11,6 @@ info("Test version")
 info("Test error translation")
 @test_throws EOFError LibArchive._la_error(LibArchive.Status.EOF)
 @test_throws ArchiveRetry LibArchive._la_error(LibArchive.Status.RETRY)
-@test_throws ArchiveWarn LibArchive._la_error(LibArchive.Status.WARN)
 @test_throws ArchiveFailed LibArchive._la_error(LibArchive.Status.FAILED)
 @test_throws ArchiveFatal LibArchive._la_error(LibArchive.Status.FATAL)
 
@@ -31,22 +30,17 @@ let
     @test LibArchive.error_string(archive_reader) == "end of file"
     LibArchive.clear_error(archive_reader)
 
-    LibArchive.set_exception(archive_reader, LibArchive.ArchiveRetry("retry"))
+    LibArchive.set_exception(archive_reader, ArchiveRetry("retry"))
     @test errno(archive_reader) == LibArchive.Status.RETRY
     @test LibArchive.error_string(archive_reader) == "retry"
     LibArchive.clear_error(archive_reader)
 
-    LibArchive.set_exception(archive_reader, LibArchive.ArchiveWarn("warn"))
-    @test errno(archive_reader) == LibArchive.Status.WARN
-    @test LibArchive.error_string(archive_reader) == "warn"
-    LibArchive.clear_error(archive_reader)
-
-    LibArchive.set_exception(archive_reader, LibArchive.ArchiveFailed("failed"))
+    LibArchive.set_exception(archive_reader, ArchiveFailed("failed"))
     @test errno(archive_reader) == LibArchive.Status.FAILED
     @test LibArchive.error_string(archive_reader) == "failed"
     LibArchive.clear_error(archive_reader)
 
-    LibArchive.set_exception(archive_reader, LibArchive.ArchiveFatal("fatal"))
+    LibArchive.set_exception(archive_reader, ArchiveFatal("fatal"))
     @test errno(archive_reader) == LibArchive.Status.FATAL
     @test LibArchive.error_string(archive_reader) == "fatal"
     LibArchive.clear_error(archive_reader)
@@ -63,7 +57,7 @@ let
         LibArchive.next_header(archive_reader)
     catch ex
     end
-    @test isa(ex, LibArchive.ArchiveFatal)
+    @test isa(ex, ArchiveFatal)
     @test !isempty(ex.msg)
 end
 
@@ -83,7 +77,7 @@ let
         LibArchive.finish_entry(archive_writer)
     catch ex
     end
-    @test isa(ex, LibArchive.ArchiveFatal)
+    @test isa(ex, ArchiveFatal)
     @test !isempty(ex.msg)
 end
 
@@ -96,9 +90,8 @@ let
     reader = LibArchive.Reader(nothing)
     LibArchive.support_filter_bzip2(reader)
     LibArchive.support_filter_compress(reader)
-    # Raise warnings
-    # LibArchive.support_filter_grzip(reader)
-    # LibArchive.support_filter_lrzip(reader)
+    LibArchive.support_filter_grzip(reader)
+    LibArchive.support_filter_lrzip(reader)
     LibArchive.support_filter_lzip(reader)
     LibArchive.support_filter_lzop(reader)
     LibArchive.support_filter_rpm(reader)

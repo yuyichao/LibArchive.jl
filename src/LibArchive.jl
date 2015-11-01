@@ -4,7 +4,7 @@ __precompile__()
 
 module LibArchive
 
-export ArchiveRetry, ArchiveWarn, ArchiveFailed, ArchiveFatal
+export ArchiveRetry, ArchiveFailed, ArchiveFatal
 
 include("libarchive_c.jl")
 

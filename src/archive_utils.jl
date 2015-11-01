@@ -61,8 +61,6 @@ function set_exception(archive::Archive, ex::ANY)
         Status.EOF, "end of file"
     elseif isa(ex, ArchiveRetry)
         Status.RETRY, (ex::ArchiveRetry).msg
-    elseif isa(ex, ArchiveWarn)
-        Status.WARN, (ex::ArchiveWarn).msg
     elseif isa(ex, ArchiveFailed)
         Status.FAILED, (ex::ArchiveFailed).msg
     elseif isa(ex, ArchiveFatal)
