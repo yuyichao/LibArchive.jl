@@ -21,11 +21,12 @@ type Entry
         ptr == C_NULL && throw(OutOfMemoryError())
         Entry(ptr)
     end
-    # function Entry()
-    #     ptr = ccall((:archive_entry_new, libarchive), Ptr{Void}, ())
-    #     ptr == C_NULL && throw(OutOfMemoryError())
-    #     Entry(ptr)
-    # end
+    # Mostly for testing purpose
+    function Entry()
+        ptr = ccall((:archive_entry_new, libarchive), Ptr{Void}, ())
+        ptr == C_NULL && throw(OutOfMemoryError())
+        Entry(ptr)
+    end
 end
 
 function Base.deepcopy_internal(entry::Entry, stackdict::ObjectIdDict)
@@ -161,7 +162,8 @@ sourcepath(entry::Entry) =
 size(entry::Entry) =
     ccall((:archive_entry_size, libarchive), Int64, (Ptr{Void},), entry)
 size_is_set(entry::Entry) =
-    ccall((:archive_entry_size_is_set, libarchive), Cint, (Ptr{Void},), entry)
+    ccall((:archive_entry_size_is_set, libarchive),
+          Cint, (Ptr{Void},), entry) != 0
 strmode(entry::Entry) =
     bytestring(ccall((:archive_entry_strmode, libarchive),
                      Cstring, (Ptr{Void},), entry))
