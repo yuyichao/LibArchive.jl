@@ -25,6 +25,38 @@ let
     LibArchive.free(archive_reader)
     @test_throws ErrorException LibArchive.support_filter_all(archive_reader)
 
+    archive_reader = LibArchive.Reader(nothing)
+    LibArchive.set_exception(archive_reader, EOFError())
+    @test errno(archive_reader) == LibArchive.Status.EOF
+    @test LibArchive.error_string(archive_reader) == "end of file"
+    LibArchive.clear_error(archive_reader)
+
+    LibArchive.set_exception(archive_reader, LibArchive.ArchiveRetry("retry"))
+    @test errno(archive_reader) == LibArchive.Status.RETRY
+    @test LibArchive.error_string(archive_reader) == "retry"
+    LibArchive.clear_error(archive_reader)
+
+    LibArchive.set_exception(archive_reader, LibArchive.ArchiveWarn("warn"))
+    @test errno(archive_reader) == LibArchive.Status.WARN
+    @test LibArchive.error_string(archive_reader) == "warn"
+    LibArchive.clear_error(archive_reader)
+
+    LibArchive.set_exception(archive_reader, LibArchive.ArchiveFailed("failed"))
+    @test errno(archive_reader) == LibArchive.Status.FAILED
+    @test LibArchive.error_string(archive_reader) == "failed"
+    LibArchive.clear_error(archive_reader)
+
+    LibArchive.set_exception(archive_reader, LibArchive.ArchiveFatal("fatal"))
+    @test errno(archive_reader) == LibArchive.Status.FATAL
+    @test LibArchive.error_string(archive_reader) == "fatal"
+    LibArchive.clear_error(archive_reader)
+
+    err_ex = ErrorException("error")
+    LibArchive.set_exception(archive_reader, err_ex)
+    @test errno(archive_reader) == LibArchive.Status.FAILED
+    @test LibArchive.error_string(archive_reader) == string(err_ex)
+    LibArchive.clear_error(archive_reader)
+
     archive_reader = LibArchive.file_reader("/this_file_does_not_exist")
     local ex
     try

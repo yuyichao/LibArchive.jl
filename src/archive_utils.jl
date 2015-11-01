@@ -60,15 +60,15 @@ function set_exception(archive::Archive, ex::ANY)
     status, msg = if isa(ex, EOFError)
         Status.EOF, "end of file"
     elseif isa(ex, ArchiveRetry)
-        Status.RETRY, ""
+        Status.RETRY, (ex::ArchiveRetry).msg
     elseif isa(ex, ArchiveWarn)
-        Status.WARN, ""
+        Status.WARN, (ex::ArchiveWarn).msg
     elseif isa(ex, ArchiveFailed)
-        Status.FAILED, ""
+        Status.FAILED, (ex::ArchiveFailed).msg
     elseif isa(ex, ArchiveFatal)
-        Status.FATAL, ""
+        Status.FATAL, (ex::ArchiveFatal).msg
     else
-        Status.FAILED, ""
+        Status.FAILED, string(ex)
     end
     # Only set error if there isn't already one
     errno(archive) == 0 && set_error(archive, status, msg)
