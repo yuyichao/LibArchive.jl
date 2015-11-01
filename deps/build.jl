@@ -14,4 +14,9 @@ end
     provides(WinRPM.RPM, "libarchive12", libarchive, os=:Windows)
 end
 
+@osx_only begin
+    using Homebrew
+    provides(Homebrew.HB, "libarchive", libarchive, os=:Darwin)
+end
+
 @BinDeps.install Dict(:libarchive => :libarchive)
