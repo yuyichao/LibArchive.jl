@@ -429,3 +429,22 @@ let
     close(reader)
     LibArchive.free(reader)
 end
+
+info("    IO Stream")
+let
+    io = IOBuffer()
+    writer = LibArchive.gen_writer(io)
+    LibArchive.set_format_gnutar(writer)
+    LibArchive.add_filter_gzip(writer)
+    create_archive(writer)
+    close(writer)
+    LibArchive.free(writer)
+
+    seek(io, 0)
+    reader = LibArchive.gen_reader(io)
+    LibArchive.support_filter_gzip(reader)
+    LibArchive.support_format_gnutar(reader)
+    verify_archive(reader)
+    close(reader)
+    LibArchive.free(reader)
+end

@@ -133,6 +133,9 @@ immutable GenericReadData{T}
     buff::Vector{UInt8}
 end
 
+gen_reader{T}(data::T, buff_size=10240) =
+    Reader(GenericReadData{T}(data, Vector{UInt8}(buff_size)))
+
 reader_open(archive::Reader, data) = nothing
 function reader_readbytes end
 function reader_skip end
@@ -211,6 +214,11 @@ function reader_close_callback{T}(c_archive::Ptr{Void},
         return set_exception(archive, ex)
     end
 end
+
+reader_readbytes(archive, io::IO, buff) =
+    readbytes!(io, buff)
+reader_skip(archive, io::IO, sz) =
+    (skip(io, sz); sz)
 
 function do_open{T<:GenericReadData}(archive::Reader{T})
     # Set various callbacks

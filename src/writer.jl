@@ -147,6 +147,8 @@ immutable GenericWriteData{T}
     data::T
 end
 
+gen_writer{T}(data::T) = Writer(GenericWriteData{T}(data))
+
 writer_open(archive::Writer, data) = nothing
 function writer_writebytes end
 writer_close(archive::Writer, data) = nothing
@@ -193,6 +195,8 @@ function writer_close_callback{T}(c_archive::Ptr{Void},
         return set_exception(archive, ex)
     end
 end
+
+writer_writebytes(archive, io::IO, ary) = write(io, ary)
 
 function do_open{T<:GenericWriteData}(archive::Writer{T})
     @_la_call(archive_write_open,
