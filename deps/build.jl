@@ -2,7 +2,17 @@ using BinDeps
 
 @BinDeps.setup
 
-libarchive = library_dependency("libarchive", aliases = ["libarchive"])
+function validate_libarchive(name, handle)
+    try
+        p = Libdl.dlsym(handle, :archive_read_free)
+        return p != C_NULL
+    catch
+        return false
+    end
+end
+
+libarchive = library_dependency("libarchive", aliases = ["libarchive"],
+                                validate=validate_libarchive)
 
 @linux_only begin
     provides(Pacman, "libarchive", libarchive)
