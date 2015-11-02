@@ -463,6 +463,8 @@ mktempdir() do d
         LibArchive.set_bytes_in_last_block(writer, 1)
         @test LibArchive.get_bytes_in_last_block(writer) == 1
         create_archive(writer)
+        @test LibArchive.format(writer) == LibArchive.Format.TAR_GNUTAR
+        @test LibArchive.format_name(writer) == "GNU tar"
         close(writer)
         LibArchive.free(writer)
 
