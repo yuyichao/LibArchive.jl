@@ -126,10 +126,12 @@ Reader{T<:Ptr,TO}(ptr::T, size, obj::TO=nothing) =
     Reader(ReadMemory{T,TO}(ptr, obj, size))
 Reader(ary::Vector, size=sizeof(ary)) = Reader(pointer(ary), size, ary)
 
+Base.unsafe_convert(::Type{Ptr{Void}}, mem_data::ReadMemory) = mem_data.ptr
+
 function do_open{T<:ReadMemory}(archive::Reader{T})
     data = archive.data
     @_la_call(archive_read_open_memory, (Ptr{Void}, Ptr{Void}, Csize_t),
-              archive, data.ptr, data.size)
+              archive, data, data.size)
 end
 
 ###

@@ -137,11 +137,13 @@ Writer{T<:Ptr,TO}(ptr::T, size, obj::TO=nothing) =
     Writer(WriteMemory{T,TO}(ptr, obj, size, Ref(Csize_t(0))))
 Writer(ary::Vector, size=sizeof(ary)) = Writer(pointer(ary), size, ary)
 
+Base.unsafe_convert(::Type{Ptr{Void}}, mem_data::WriteMemory) = mem_data.ptr
+
 function do_open{T<:WriteMemory}(archive::Writer{T})
     data = archive.data
     @_la_call(archive_write_open_memory,
               (Ptr{Void}, Ptr{Void}, Csize_t, Ptr{Csize_t}),
-              archive, data.ptr, data.size, data.used)
+              archive, data, data.size, data.used)
 end
 
 get_used{T<:WriteMemory}(archive::Writer{T}) = archive.data.used[]
