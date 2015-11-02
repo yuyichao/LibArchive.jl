@@ -23,7 +23,9 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
-type Writer{T} <: Archive
+abstract WriterData
+
+type Writer{T<:WriterData} <: Archive
     ptr::Ptr{Void}
     data::T
     opened::Bool
@@ -35,7 +37,8 @@ type Writer{T} <: Archive
         obj
     end
 end
-Writer{T}(data::T) = Writer{T}(data)
+
+Writer{T<:WriterData}(data::T) = Writer{T}(data)
 
 function free(archive::Writer)
     ptr = archive.ptr
@@ -91,12 +94,12 @@ set_skip_file(archive::Writer, dev, ino) =
 ###
 # Open filename
 
-immutable WriteFileName{T}
+immutable WriteFileName{T} <: WriterData
     name::T
 end
 
-file_writer(fname=nothing) =
-    Writer(WriteFileName(fname))
+Writer(fname::AbstractString) = Writer(WriteFileName(fname))
+Writer() = Writer(WriteFileName(nothing))
 
 function do_open{T}(archive::Writer{WriteFileName{T}})
     data = archive.data
@@ -109,12 +112,11 @@ function do_open(archive::Writer{WriteFileName{Void}})
               archive, C_NULL)
 end
 
-immutable WriteFD
+immutable WriteFD <: WriterData
     fd::Cint
 end
 
-file_writer{T<:Integer}(fd::T) =
-    Writer(WriteFD(Cint(fd)))
+Writer{T<:Integer}(fd::T) = Writer(WriteFD(Cint(fd)))
 
 function do_open(archive::Writer{WriteFD})
     data = archive.data
@@ -124,18 +126,22 @@ end
 ###
 # Open memory
 
-immutable WriteMemory{T}
+immutable WriteMemory{T} <: WriterData
     data::T
+    size::Csize_t
     used::typeof(Ref{Csize_t}())
 end
 
-mem_writer(data) = Writer(WriteMemory(data, Ref(Csize_t(0))))
+Writer{T<:Vector}(data::T, size=sizeof(data)) =
+    Writer(WriteMemory{T}(data, size, Ref(Csize_t(0))))
+Writer{T<:Ptr}(data::T, size) =
+    Writer(WriteMemory{T}(data, size, Ref(Csize_t(0))))
 
 function do_open{T}(archive::Writer{WriteMemory{T}})
-    data = archive.data.data
+    data = archive.data
     @_la_call(archive_write_open_memory,
               (Ptr{Void}, Ptr{Void}, Csize_t, Ptr{Csize_t}),
-              archive, data, sizeof(data), archive.data.used)
+              archive, data.data, data.size, data.used)
 end
 
 get_used{T}(archive::Writer{WriteMemory{T}}) = archive.data.used[]
@@ -143,11 +149,11 @@ get_used{T}(archive::Writer{WriteMemory{T}}) = archive.data.used[]
 ###
 # Generic writer
 
-immutable GenericWriteData{T}
+immutable GenericWriteData{T} <: WriterData
     data::T
 end
 
-gen_writer{T}(data::T) = Writer(GenericWriteData{T}(data))
+Writer{T}(data::T) = Writer(GenericWriteData{T}(data))
 
 writer_open(archive::Writer, data) = nothing
 function writer_writebytes end
@@ -231,3 +237,9 @@ when the client discovers that things have gone wrong.
 """
 write_fail(archive::Writer) =
     @_la_call(archive_write_fail, (Ptr{Void},), archive)
+
+@deprecate file_writer(fname::AbstractString) Writer(fname)
+@deprecate file_writer() Writer()
+@deprecate file_writer{T<:Integer}(fd::T) Writer(fd)
+@deprecate mem_writer(data::Vector) Writer(data)
+@deprecate gen_writer(data) Writer(data)

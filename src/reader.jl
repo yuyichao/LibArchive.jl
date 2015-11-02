@@ -21,7 +21,9 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
-type Reader{T} <: Archive
+abstract ReaderData
+
+type Reader{T<:ReaderData} <: Archive
     ptr::Ptr{Void}
     data::T
     opened::Bool
@@ -34,7 +36,7 @@ type Reader{T} <: Archive
     end
 end
 
-Reader{T}(data::T) = Reader{T}(data)
+Reader{T<:ReaderData}(data::T) = Reader{T}(data)
 
 function free(archive::Reader)
     ptr = archive.ptr
@@ -68,13 +70,15 @@ end
 ###
 # Open filename
 
-immutable ReadFileName{T}
+immutable ReadFileName{T} <: ReaderData
     name::T
     block_size::Int
 end
 
-file_reader(fname=nothing, block_size=10240) =
-    Reader(ReadFileName(fname, Int(block_size)))
+Reader(fname::AbstractString; block_size=10240) =
+    Reader(ReadFileName(fname, Int(block_size)::Int))
+Reader(; block_size=10240) =
+    Reader(ReadFileName(nothing, Int(block_size)::Int))
 
 function do_open{T}(archive::Reader{ReadFileName{T}})
     data = archive.data
@@ -88,13 +92,13 @@ function do_open(archive::Reader{ReadFileName{Void}})
               archive, C_NULL, data.block_size)
 end
 
-immutable ReadFD
+immutable ReadFD <: ReaderData
     fd::Cint
     block_size::Int
 end
 
-file_reader{T<:Integer}(fd::T, block_size=10240) =
-    Reader(ReadFD(Cint(fd), Int(block_size)))
+Reader(fd::Integer; block_size=10240) =
+    Reader(ReadFD(Cint(fd), Int(block_size)::Int))
 
 function do_open(archive::Reader{ReadFD})
     data = archive.data
@@ -112,12 +116,14 @@ end
 ###
 # Open memory
 
-immutable ReadMemory{T}
+immutable ReadMemory{T} <: ReaderData
     data::T
     size::Int
 end
 
-mem_reader{T}(data::T, size=sizeof(data)) = Reader(ReadMemory{T}(data, size))
+Reader{T<:Vector}(data::T, size=sizeof(data)) =
+    Reader(ReadMemory{T}(data, size))
+Reader{T<:Ptr}(data::T, size) = Reader(ReadMemory{T}(data, size))
 
 function do_open{T}(archive::Reader{ReadMemory{T}})
     data = archive.data
@@ -128,12 +134,12 @@ end
 ###
 # Generic reader
 
-immutable GenericReadData{T}
+immutable GenericReadData{T} <: ReaderData
     data::T
     buff::Vector{UInt8}
 end
 
-gen_reader{T}(data::T, buff_size=10240) =
+Reader{T}(data::T, buff_size=10240) =
     Reader(GenericReadData{T}(data, Vector{UInt8}(buff_size)))
 
 reader_open(archive::Reader, data) = nothing
@@ -275,3 +281,11 @@ Base.skip(archive::Reader) =
 "Writes data to specified filedes"
 read_into_fd(archive::Reader, fd::Integer) =
     @_la_call(archive_read_data_into_fd, (Ptr{Void}, Cint), archive, fd)
+
+@deprecate file_reader(block_size=10240) Reader(block_size=block_size)
+@deprecate file_reader(fname::AbstractString,
+                       block_size=10240) Reader(fname, block_size=block_size)
+@deprecate file_reader(fd::Integer,
+                       block_size=10240) Reader(fd, block_size=block_size)
+@deprecate mem_reader{T<:Vector}(data::T, size=sizeof(data)) Reader(data, size)
+@deprecate gen_reader(data, buff_size=10240) Reader(data, buff_size)
