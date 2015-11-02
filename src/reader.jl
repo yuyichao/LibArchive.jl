@@ -116,19 +116,20 @@ end
 ###
 # Open memory
 
-immutable ReadMemory{T} <: ReaderData
-    data::T
+immutable ReadMemory{T,TO} <: ReaderData
+    ptr::T
+    obj::TO # Reference for GC
     size::Int
 end
 
-Reader{T<:Vector}(data::T, size=sizeof(data)) =
-    Reader(ReadMemory{T}(data, size))
-Reader{T<:Ptr}(data::T, size) = Reader(ReadMemory{T}(data, size))
+Reader{T<:Ptr,TO}(ptr::T, size, obj::TO=nothing) =
+    Reader(ReadMemory{T,TO}(ptr, obj, size))
+Reader(ary::Vector, size=sizeof(ary)) = Reader(pointer(ary), size, ary)
 
-function do_open{T}(archive::Reader{ReadMemory{T}})
+function do_open{T<:ReadMemory}(archive::Reader{T})
     data = archive.data
     @_la_call(archive_read_open_memory, (Ptr{Void}, Ptr{Void}, Csize_t),
-              archive, data.data, data.size)
+              archive, data.ptr, data.size)
 end
 
 ###

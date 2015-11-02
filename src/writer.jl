@@ -126,25 +126,25 @@ end
 ###
 # Open memory
 
-immutable WriteMemory{T} <: WriterData
-    data::T
+immutable WriteMemory{T,TO} <: WriterData
+    ptr::T
+    obj::TO # Reference for GC
     size::Csize_t
     used::typeof(Ref{Csize_t}())
 end
 
-Writer{T<:Vector}(data::T, size=sizeof(data)) =
-    Writer(WriteMemory{T}(data, size, Ref(Csize_t(0))))
-Writer{T<:Ptr}(data::T, size) =
-    Writer(WriteMemory{T}(data, size, Ref(Csize_t(0))))
+Writer{T<:Ptr,TO}(ptr::T, size, obj::TO=nothing) =
+    Writer(WriteMemory{T,TO}(ptr, obj, size, Ref(Csize_t(0))))
+Writer(ary::Vector, size=sizeof(ary)) = Writer(pointer(ary), size, ary)
 
-function do_open{T}(archive::Writer{WriteMemory{T}})
+function do_open{T<:WriteMemory}(archive::Writer{T})
     data = archive.data
     @_la_call(archive_write_open_memory,
               (Ptr{Void}, Ptr{Void}, Csize_t, Ptr{Csize_t}),
-              archive, data.data, data.size, data.used)
+              archive, data.ptr, data.size, data.used)
 end
 
-get_used{T}(archive::Writer{WriteMemory{T}}) = archive.data.used[]
+get_used{T<:WriteMemory}(archive::Writer{T}) = archive.data.used[]
 
 ###
 # Generic writer
