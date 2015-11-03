@@ -55,13 +55,13 @@ to_open_callback{T}(func::Function, ::Type{T}) =
 to_close_callback{T}(func::Function, ::Type{T}) =
     cfunction(func, Cint, Tuple{Ptr{Void},Ptr{T}})
 
-"""
-    int archive_switch_callback(struct archive*, void *client_data1,
-                                void *client_data2)
-
-Switches from one client data object to the next/prev client data object.
-This is useful for reading from different data blocks such as a set of files
-that make up one large file.
-"""
-to_switch_callback{T1,T2}(func::Function, ::Type{T1}=Void, ::Type{T2}=Void) =
-    cfunction(func, Cint, Tuple{Ptr{Void},Ptr{T1},Ptr{T2}})
+# """
+#     int archive_switch_callback(struct archive*, void *client_data1,
+#                                 void *client_data2)
+#
+# Switches from one client data object to the next/prev client data object.
+# This is useful for reading from different data blocks such as a set of files
+# that make up one large file.
+# """
+# to_switch_callback{T1,T2}(func::Function, ::Type{T1}=Void, ::Type{T2}=Void) =
+#     cfunction(func, Cint, Tuple{Ptr{Void},Ptr{T1},Ptr{T2}})
