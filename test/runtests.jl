@@ -4,8 +4,7 @@ using LibArchive
 using Base.Test
 
 ## Version
-info("Test version")
-@test isa(LibArchive.version(), VersionNumber)
+info("Testing libarchive $(LibArchive.version()::VersionNumber)")
 
 ## Error
 info("Test error translation")
