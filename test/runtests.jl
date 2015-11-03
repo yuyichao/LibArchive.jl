@@ -13,6 +13,7 @@ info("Test error translation")
 @test_throws ArchiveRetry LibArchive._la_error(LibArchive.Status.RETRY)
 @test_throws ArchiveFailed LibArchive._la_error(LibArchive.Status.FAILED)
 @test_throws ArchiveFatal LibArchive._la_error(LibArchive.Status.FATAL)
+@test_throws ErrorException LibArchive._la_error(Cint(-1024))
 
 ## Reader error
 info("Test reader error handling")
@@ -44,12 +45,23 @@ LibArchive.Reader() do reader
     LibArchive.set_exception(reader, ArchiveFatal("fatal"))
     @test errno(reader) == LibArchive.Status.FATAL
     @test LibArchive.error_string(reader) == "fatal"
+    LibArchive.Reader() do reader2
+        LibArchive.copy_error(reader2, reader)
+        @test errno(reader2) == LibArchive.Status.FATAL
+        @test LibArchive.error_string(reader2) == "fatal"
+    end
     LibArchive.clear_error(reader)
 
     err_ex = ErrorException("error")
     LibArchive.set_exception(reader, err_ex)
     @test errno(reader) == LibArchive.Status.FAILED
     @test LibArchive.error_string(reader) == string(err_ex)
+    LibArchive.clear_error(reader)
+
+    @test LibArchive.check_objptr(Ptr{Void}(pointer_from_objref(reader)),
+                                  reader.ptr) == LibArchive.Status.FAILED
+    @test errno(reader) == LibArchive.Status.FAILED
+    @test LibArchive.error_string(reader) == "TypeError"
     LibArchive.clear_error(reader)
 end
 
