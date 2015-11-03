@@ -83,6 +83,7 @@ end
 
 info("Test availability of filters and formats")
 let
+    info("    Reader")
     reader = LibArchive.Reader()
     LibArchive.support_filter_all(reader)
     LibArchive.free(reader)
@@ -96,6 +97,7 @@ let
         LibArchive.support_filter_lzip(reader)
         LibArchive.support_filter_lzop(reader)
     end
+    LibArchive.support_filter_lzma(reader)
     LibArchive.support_filter_rpm(reader)
     LibArchive.support_filter_uu(reader)
     LibArchive.support_filter_xz(reader)
@@ -126,8 +128,67 @@ let
     if LibArchive.version() >= v"3.1.0"
         reader = LibArchive.Reader()
         LibArchive.set_format(reader, LibArchive.Format.TAR)
+        LibArchive.append_filter(reader, LibArchive.FilterType.BZIP2)
         LibArchive.free(reader)
     end
+end
+
+let
+    info("    Writer")
+    if LibArchive.version() >= v"3.1.0"
+        writer = LibArchive.Writer()
+        LibArchive.add_filter(writer, LibArchive.FilterType.COMPRESS)
+        LibArchive.add_filter(writer, "bzip2")
+        LibArchive.free(writer)
+    end
+
+    writer = LibArchive.Writer()
+    if LibArchive.version() >= v"3.1.0"
+        LibArchive.add_filter_b64encode(writer)
+        LibArchive.add_filter_grzip(writer)
+        LibArchive.add_filter_lrzip(writer)
+        LibArchive.add_filter_lzop(writer)
+        LibArchive.add_filter_uuencode(writer)
+    end
+    LibArchive.add_filter_bzip2(writer)
+    LibArchive.add_filter_compress(writer)
+    LibArchive.add_filter_gzip(writer)
+    LibArchive.add_filter_none(writer)
+    @osx? nothing : begin
+        LibArchive.add_filter_lzip(writer)
+        LibArchive.add_filter_lzma(writer)
+        LibArchive.add_filter_xz(writer)
+    end
+    LibArchive.free(writer)
+
+    writer = LibArchive.Writer()
+    LibArchive.set_format(writer, LibArchive.Format.CPIO)
+    if LibArchive.version() >= v"3.1.0"
+        LibArchive.set_format(writer, "gnutar")
+    end
+    LibArchive.free(writer)
+
+    writer = LibArchive.Writer()
+    if LibArchive.version() >= v"3.1.0"
+        LibArchive.set_format_mtree_classic(writer)
+        LibArchive.set_format_v7tar(writer)
+    end
+    LibArchive.set_format_7zip(writer)
+    LibArchive.set_format_ar_bsd(writer)
+    LibArchive.set_format_ar_svr4(writer)
+    LibArchive.set_format_cpio(writer)
+    LibArchive.set_format_cpio_newc(writer)
+    LibArchive.set_format_gnutar(writer)
+    LibArchive.set_format_iso9660(writer)
+    LibArchive.set_format_mtree(writer)
+    LibArchive.set_format_pax(writer)
+    LibArchive.set_format_pax_restricted(writer)
+    LibArchive.set_format_shar(writer)
+    LibArchive.set_format_shar_dump(writer)
+    LibArchive.set_format_ustar(writer)
+    LibArchive.set_format_xar(writer)
+    LibArchive.set_format_zip(writer)
+    LibArchive.free(writer)
 end
 
 # Copy entry
