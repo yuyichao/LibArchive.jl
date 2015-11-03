@@ -30,6 +30,18 @@ end
 
 abstract Archive
 
+function archive_guard(func::Function, archive::Archive)
+    try
+        res = func(archive)
+        # Only explicitly close if the function didn't throw an error
+        # otherwise, only call free to avoid overriding user exceptions
+        close(archive)
+        return res
+    finally
+        free(archive)
+    end
+end
+
 include("error.jl")
 include("callback.jl")
 include("archive_utils.jl")

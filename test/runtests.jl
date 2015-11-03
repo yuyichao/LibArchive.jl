@@ -17,44 +17,46 @@ info("Test error translation")
 ## Reader error
 info("Test reader error handling")
 let
-    archive_reader = LibArchive.Reader()
-    @test archive_reader.ptr != C_NULL
-    LibArchive.free(archive_reader)
-    @test archive_reader.ptr == C_NULL
-    LibArchive.free(archive_reader)
-    @test_throws ErrorException LibArchive.support_filter_all(archive_reader)
+    reader = LibArchive.Reader()
+    @test reader.ptr != C_NULL
+    LibArchive.free(reader)
+    @test reader.ptr == C_NULL
+    LibArchive.free(reader)
+    @test_throws ErrorException LibArchive.support_filter_all(reader)
+end
 
-    archive_reader = LibArchive.Reader()
-    LibArchive.set_exception(archive_reader, EOFError())
-    @test errno(archive_reader) == LibArchive.Status.EOF
-    @test LibArchive.error_string(archive_reader) == "end of file"
-    LibArchive.clear_error(archive_reader)
+LibArchive.Reader() do reader
+    LibArchive.set_exception(reader, EOFError())
+    @test errno(reader) == LibArchive.Status.EOF
+    @test LibArchive.error_string(reader) == "end of file"
+    LibArchive.clear_error(reader)
 
-    LibArchive.set_exception(archive_reader, ArchiveRetry("retry"))
-    @test errno(archive_reader) == LibArchive.Status.RETRY
-    @test LibArchive.error_string(archive_reader) == "retry"
-    LibArchive.clear_error(archive_reader)
+    LibArchive.set_exception(reader, ArchiveRetry("retry"))
+    @test errno(reader) == LibArchive.Status.RETRY
+    @test LibArchive.error_string(reader) == "retry"
+    LibArchive.clear_error(reader)
 
-    LibArchive.set_exception(archive_reader, ArchiveFailed("failed"))
-    @test errno(archive_reader) == LibArchive.Status.FAILED
-    @test LibArchive.error_string(archive_reader) == "failed"
-    LibArchive.clear_error(archive_reader)
+    LibArchive.set_exception(reader, ArchiveFailed("failed"))
+    @test errno(reader) == LibArchive.Status.FAILED
+    @test LibArchive.error_string(reader) == "failed"
+    LibArchive.clear_error(reader)
 
-    LibArchive.set_exception(archive_reader, ArchiveFatal("fatal"))
-    @test errno(archive_reader) == LibArchive.Status.FATAL
-    @test LibArchive.error_string(archive_reader) == "fatal"
-    LibArchive.clear_error(archive_reader)
+    LibArchive.set_exception(reader, ArchiveFatal("fatal"))
+    @test errno(reader) == LibArchive.Status.FATAL
+    @test LibArchive.error_string(reader) == "fatal"
+    LibArchive.clear_error(reader)
 
     err_ex = ErrorException("error")
-    LibArchive.set_exception(archive_reader, err_ex)
-    @test errno(archive_reader) == LibArchive.Status.FAILED
-    @test LibArchive.error_string(archive_reader) == string(err_ex)
-    LibArchive.clear_error(archive_reader)
+    LibArchive.set_exception(reader, err_ex)
+    @test errno(reader) == LibArchive.Status.FAILED
+    @test LibArchive.error_string(reader) == string(err_ex)
+    LibArchive.clear_error(reader)
+end
 
-    archive_reader = LibArchive.Reader("/this_file_does_not_exist")
+LibArchive.Reader("/this_file_does_not_exist") do reader
     local ex
     try
-        LibArchive.next_header(archive_reader)
+        LibArchive.next_header(reader)
     catch ex
     end
     @test isa(ex, ArchiveFatal)
@@ -64,31 +66,38 @@ end
 # Writer error
 info("Test writer error handling")
 let
-    archive_writer = LibArchive.Writer()
-    @test archive_writer.ptr != C_NULL
-    LibArchive.free(archive_writer)
-    @test archive_writer.ptr == C_NULL
-    LibArchive.free(archive_writer)
-    @test_throws ErrorException LibArchive.add_filter_bzip2(archive_writer)
+    writer = LibArchive.Writer()
+    @test writer.ptr != C_NULL
+    LibArchive.free(writer)
+    @test writer.ptr == C_NULL
+    LibArchive.free(writer)
+    @test_throws ErrorException LibArchive.add_filter_bzip2(writer)
+end
 
-    archive_writer = LibArchive.Writer("/this_dir_does_not_exist/file")
+LibArchive.Writer("/this_dir_does_not_exist/file") do writer
     local ex
     try
-        LibArchive.finish_entry(archive_writer)
+        LibArchive.finish_entry(writer)
     catch ex
     end
     @test isa(ex, ArchiveFatal)
     @test !isempty(ex.msg)
 end
 
-info("Test availability of filters and formats")
-let
-    info("    Reader")
-    reader = LibArchive.Reader()
-    LibArchive.support_filter_all(reader)
-    LibArchive.free(reader)
+info("Test do block result and exception pass through")
 
-    reader = LibArchive.Reader()
+@test_throws BoundsError LibArchive.Writer(_->throw(BoundsError([], 10)))
+@test_throws ArgumentError LibArchive.Reader(_->throw(ArgumentError("a")))
+@test LibArchive.Writer(_->10) === 10
+@test LibArchive.Reader(_->0.1) === 0.1
+
+info("Test availability of filters and formats")
+info("    Reader")
+LibArchive.Reader() do reader
+    LibArchive.support_filter_all(reader)
+end
+
+LibArchive.Reader() do reader
     LibArchive.support_filter_bzip2(reader)
     LibArchive.support_filter_compress(reader)
     if LibArchive.version() >= v"3.1.0"
@@ -101,13 +110,13 @@ let
     LibArchive.support_filter_rpm(reader)
     LibArchive.support_filter_uu(reader)
     LibArchive.support_filter_xz(reader)
-    LibArchive.free(reader)
+end
 
-    reader = LibArchive.Reader()
+LibArchive.Reader() do reader
     LibArchive.support_format_all(reader)
-    LibArchive.free(reader)
+end
 
-    reader = LibArchive.Reader()
+LibArchive.Reader() do reader
     LibArchive.support_format_7zip(reader)
     LibArchive.support_format_ar(reader)
     LibArchive.support_format_by_code(reader, LibArchive.Format._7ZIP)
@@ -123,26 +132,24 @@ let
     LibArchive.support_format_tar(reader)
     LibArchive.support_format_xar(reader)
     LibArchive.support_format_zip(reader)
-    LibArchive.free(reader)
+end
 
-    if LibArchive.version() >= v"3.1.0"
-        reader = LibArchive.Reader()
+if LibArchive.version() >= v"3.1.0"
+    LibArchive.Reader() do reader
         LibArchive.set_format(reader, LibArchive.Format.TAR)
         LibArchive.append_filter(reader, LibArchive.FilterType.BZIP2)
-        LibArchive.free(reader)
     end
 end
 
-let
-    info("    Writer")
-    if LibArchive.version() >= v"3.1.0"
-        writer = LibArchive.Writer()
+info("    Writer")
+if LibArchive.version() >= v"3.1.0"
+    LibArchive.Writer() do writer
         LibArchive.add_filter(writer, LibArchive.FilterType.COMPRESS)
         LibArchive.add_filter(writer, "bzip2")
-        LibArchive.free(writer)
     end
+end
 
-    writer = LibArchive.Writer()
+LibArchive.Writer() do writer
     if LibArchive.version() >= v"3.1.0"
         LibArchive.add_filter_b64encode(writer)
         LibArchive.add_filter_grzip(writer)
@@ -159,16 +166,16 @@ let
         LibArchive.add_filter_lzma(writer)
         LibArchive.add_filter_xz(writer)
     end
-    LibArchive.free(writer)
+end
 
-    writer = LibArchive.Writer()
+LibArchive.Writer() do writer
     LibArchive.set_format(writer, LibArchive.Format.CPIO)
     if LibArchive.version() >= v"3.1.0"
         LibArchive.set_format(writer, "gnutar")
     end
-    LibArchive.free(writer)
+end
 
-    writer = LibArchive.Writer()
+LibArchive.Writer() do writer
     if LibArchive.version() >= v"3.1.0"
         LibArchive.set_format_mtree_classic(writer)
         LibArchive.set_format_v7tar(writer)
@@ -188,7 +195,6 @@ let
     LibArchive.set_format_ustar(writer)
     LibArchive.set_format_xar(writer)
     LibArchive.set_format_zip(writer)
-    LibArchive.free(writer)
 end
 
 # Copy entry
@@ -336,7 +342,7 @@ end
 end
 
 let
-    # ids/names
+    # ids / names
     entry = LibArchive.Entry()
     @test_throws ArgumentError LibArchive.gname(entry)
     @test_throws ArgumentError LibArchive.uname(entry)
@@ -516,29 +522,28 @@ end
 info("    Filename")
 mktempdir() do d
     cd(d) do
-        writer = LibArchive.Writer("./test.tar.bz2")
-        LibArchive.set_format_gnutar(writer)
-        LibArchive.add_filter_bzip2(writer)
-        LibArchive.set_bytes_per_block(writer, 4096)
-        @test LibArchive.get_bytes_per_block(writer) == 4096
-        LibArchive.set_bytes_in_last_block(writer, 1)
-        @test LibArchive.get_bytes_in_last_block(writer) == 1
-        create_archive(writer)
-        @test LibArchive.format(writer) == LibArchive.Format.TAR_GNUTAR
-        @test LibArchive.format_name(writer) == "GNU tar"
-        close(writer)
-        LibArchive.free(writer)
+        LibArchive.Writer("./test.tar.bz2") do writer
+            LibArchive.set_format_gnutar(writer)
+            LibArchive.add_filter_bzip2(writer)
+            LibArchive.set_bytes_per_block(writer, 4096)
+            @test LibArchive.get_bytes_per_block(writer) == 4096
+            LibArchive.set_bytes_in_last_block(writer, 1)
+            @test LibArchive.get_bytes_in_last_block(writer) == 1
+            create_archive(writer)
+            @test LibArchive.format(writer) == LibArchive.Format.TAR_GNUTAR
+            @test LibArchive.format_name(writer) == "GNU tar"
+        end
 
-        reader = LibArchive.Reader("./test.tar.bz2")
-        LibArchive.support_filter_bzip2(reader)
-        LibArchive.support_format_gnutar(reader)
-        verify_archive(reader)
-        @test LibArchive.filter_count(reader) > 0
-        LibArchive.filter_bytes(reader, 0)
-        @test LibArchive.filter_code(reader, 0) == LibArchive.FilterType.BZIP2
-        @test LibArchive.filter_name(reader, 0) == "bzip2"
-        close(reader)
-        LibArchive.free(reader)
+        LibArchive.Reader("./test.tar.bz2") do reader
+            LibArchive.support_filter_bzip2(reader)
+            LibArchive.support_format_gnutar(reader)
+            verify_archive(reader)
+            @test LibArchive.filter_count(reader) > 0
+            LibArchive.filter_bytes(reader, 0)
+            @test (LibArchive.filter_code(reader, 0) ==
+                   LibArchive.FilterType.BZIP2)
+            @test LibArchive.filter_name(reader, 0) == "bzip2"
+        end
     end
 end
 
@@ -548,22 +553,20 @@ end
         fd = ccall(:open, Cint, (Cstring, Cint, Cint),
                    "./test.tar.gz",
                    Base.FS.JL_O_WRONLY | Base.FS.JL_O_CREAT, 0o644)
-        writer = LibArchive.Writer(fd)
-        LibArchive.set_format_gnutar(writer)
-        LibArchive.add_filter_gzip(writer)
-        create_archive(writer)
-        close(writer)
-        LibArchive.free(writer)
+        LibArchive.Writer(fd) do writer
+            LibArchive.set_format_gnutar(writer)
+            LibArchive.add_filter_gzip(writer)
+            create_archive(writer)
+        end
         ccall(:close, Cint, (Cint,), fd)
 
         fd = ccall(:open, Cint, (Cstring, Cint),
                    "./test.tar.gz", Base.FS.JL_O_RDONLY)
-        reader = LibArchive.Reader(fd)
-        LibArchive.support_filter_gzip(reader)
-        LibArchive.support_format_gnutar(reader)
-        verify_archive(reader)
-        close(reader)
-        LibArchive.free(reader)
+        LibArchive.Reader(fd) do reader
+            LibArchive.support_filter_gzip(reader)
+            LibArchive.support_format_gnutar(reader)
+            verify_archive(reader)
+        end
         ccall(:close, Cint, (Cint,), fd)
     end
 end
@@ -571,57 +574,55 @@ end
 info("    In memory")
 let
     buffer = Vector{UInt8}(4096)
-    writer = LibArchive.Writer(buffer)
-    LibArchive.set_format_gnutar(writer)
-    LibArchive.add_filter_bzip2(writer)
-    create_archive(writer)
-    close(writer)
-    LibArchive.free(writer)
-    used_size = LibArchive.get_used(writer)
+    used_size = LibArchive.Writer(buffer) do writer
+        LibArchive.set_format_gnutar(writer)
+        LibArchive.add_filter_bzip2(writer)
+        create_archive(writer)
+        # We need to flush the writer for `get_used` to return useful result
+        close(writer)
+        LibArchive.get_used(writer)
+    end
 
-    reader = LibArchive.Reader(buffer, used_size)
-    LibArchive.support_filter_bzip2(reader)
-    LibArchive.support_format_gnutar(reader)
-    verify_archive(reader)
-    close(reader)
-    LibArchive.free(reader)
+    LibArchive.Reader(buffer, used_size) do reader
+        LibArchive.support_filter_bzip2(reader)
+        LibArchive.support_format_gnutar(reader)
+        verify_archive(reader)
+    end
 end
 
 info("    In memory (C pointer)")
 let
     buffer = Libc.malloc(4096)
-    writer = LibArchive.Writer(buffer, 4096)
-    LibArchive.set_format_gnutar(writer)
-    LibArchive.add_filter_bzip2(writer)
-    create_archive(writer)
-    close(writer)
-    LibArchive.free(writer)
-    used_size = LibArchive.get_used(writer)
+    used_size = LibArchive.Writer(buffer, 4096) do writer
+        LibArchive.set_format_gnutar(writer)
+        LibArchive.add_filter_bzip2(writer)
+        create_archive(writer)
+        # We need to flush the writer for `get_used` to return useful result
+        close(writer)
+        LibArchive.get_used(writer)
+    end
 
-    reader = LibArchive.Reader(buffer, used_size)
-    LibArchive.support_filter_bzip2(reader)
-    LibArchive.support_format_gnutar(reader)
-    verify_archive(reader)
-    close(reader)
-    LibArchive.free(reader)
+    LibArchive.Reader(buffer, used_size) do reader
+        LibArchive.support_filter_bzip2(reader)
+        LibArchive.support_format_gnutar(reader)
+        verify_archive(reader)
+    end
     Libc.free(buffer)
 end
 
 info("    IO Stream")
 let
     io = IOBuffer()
-    writer = LibArchive.Writer(io)
-    LibArchive.set_format_gnutar(writer)
-    LibArchive.add_filter_none(writer)
-    create_archive(writer)
-    close(writer)
-    LibArchive.free(writer)
+    LibArchive.Writer(io) do writer
+        LibArchive.set_format_gnutar(writer)
+        LibArchive.add_filter_none(writer)
+        create_archive(writer)
+    end
 
     seek(io, 0)
-    reader = LibArchive.Reader(io)
-    LibArchive.support_filter_none(reader)
-    LibArchive.support_format_gnutar(reader)
-    verify_archive(reader)
-    close(reader)
-    LibArchive.free(reader)
+    LibArchive.Reader(io) do reader
+        LibArchive.support_filter_none(reader)
+        LibArchive.support_format_gnutar(reader)
+        verify_archive(reader)
+    end
 end

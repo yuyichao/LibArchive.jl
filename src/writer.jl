@@ -240,6 +240,10 @@ when the client discovers that things have gone wrong.
 write_fail(archive::Writer) =
     @_la_call(archive_write_fail, (Ptr{Void},), archive)
 
+Writer(f::Function) = archive_guard(f, Writer())
+Writer(f::Function, args...; kws...) =
+    archive_guard(f, Writer(args...; kws...))
+
 @deprecate file_writer(fname::AbstractString) Writer(fname)
 @deprecate file_writer() Writer()
 @deprecate file_writer{T<:Integer}(fd::T) Writer(fd)

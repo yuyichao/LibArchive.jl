@@ -285,6 +285,10 @@ Base.skip(archive::Reader) =
 read_into_fd(archive::Reader, fd::Integer) =
     @_la_call(archive_read_data_into_fd, (Ptr{Void}, Cint), archive, fd)
 
+Reader(f::Function) = archive_guard(f, Reader())
+Reader(f::Function, args...; kws...) =
+    archive_guard(f, Reader(args...; kws...))
+
 @deprecate file_reader(block_size=10240) Reader(block_size=block_size)
 @deprecate file_reader(fname::AbstractString,
                        block_size=10240) Reader(fname, block_size=block_size)
