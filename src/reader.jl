@@ -295,4 +295,5 @@ Reader(f::Function, args...; kws...) =
 @deprecate file_reader(fd::Integer,
                        block_size=10240) Reader(fd, block_size=block_size)
 @deprecate mem_reader{T<:Vector}(data::T, size=sizeof(data)) Reader(data, size)
+@deprecate mem_reader(obj, size=sizeof(obj)) Reader(pointer(obj), size, obj)
 @deprecate gen_reader(data, buff_size=10240) Reader(data, buff_size)

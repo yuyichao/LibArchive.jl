@@ -248,4 +248,5 @@ Writer(f::Function, args...; kws...) =
 @deprecate file_writer() Writer()
 @deprecate file_writer{T<:Integer}(fd::T) Writer(fd)
 @deprecate mem_writer(data::Vector) Writer(data)
+@deprecate mem_writer(obj) Writer(pointer(obj), sizeof(obj), obj)
 @deprecate gen_writer(data) Writer(data)
