@@ -3,6 +3,8 @@
 using LibArchive
 using Base.Test
 
+using Compat
+
 ## Version
 info("Testing libarchive $(LibArchive.version()::VersionNumber)")
 
@@ -563,7 +565,8 @@ end
         info("    FD")
         fd = ccall(:open, Cint, (Cstring, Cint, Cint),
                    "./test.tar.gz",
-                   Base.FS.JL_O_WRONLY | Base.FS.JL_O_CREAT, 0o644)
+                   Compat.Filesystem.JL_O_WRONLY | Compat.Filesystem.JL_O_CREAT,
+                   0o644)
         LibArchive.Writer(fd) do writer
             LibArchive.set_format_gnutar(writer)
             LibArchive.add_filter_gzip(writer)
@@ -572,7 +575,7 @@ end
         ccall(:close, Cint, (Cint,), fd)
 
         fd = ccall(:open, Cint, (Cstring, Cint),
-                   "./test.tar.gz", Base.FS.JL_O_RDONLY)
+                   "./test.tar.gz", Compat.Filesystem.JL_O_RDONLY)
         LibArchive.Reader(fd) do reader
             LibArchive.support_filter_gzip(reader)
             LibArchive.support_format_gnutar(reader)
