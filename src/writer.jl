@@ -161,11 +161,7 @@ writer_open(archive::Writer, data) = nothing
 function writer_writebytes end
 writer_close(archive::Writer, data) = nothing
 
-function writer_open_callback{T}(c_archive::Ptr{Void},
-                                 jl_archive::Ptr{Writer{GenericWriteData{T}}})
-    status = check_objptr(jl_archive, c_archive)
-    status != Status.OK && return status
-    archive = unsafe_pointer_to_objref(jl_archive)::Writer{GenericWriteData{T}}
+function writer_open_callback(c_archive, archive)
     try
         clear_error(archive)
         writer_open(archive, archive.data.data)
@@ -175,11 +171,8 @@ function writer_open_callback{T}(c_archive::Ptr{Void},
     end
 end
 
-function writer_write_callback{T}(c_archive::Ptr{Void},
-                                  jl_archive::Ptr{Writer{GenericWriteData{T}}},
-                                  buff::Ptr{Void}, length::Csize_t)
-    check_objptr(jl_archive, c_archive) != Status.OK && return Cssize_t(0)
-    archive = unsafe_pointer_to_objref(jl_archive)::Writer{GenericWriteData{T}}
+function writer_write_callback(c_archive, archive, buff::Ptr{Void},
+                               length::Csize_t)
     try
         clear_error(archive)
         ary = pointer_to_array(Ptr{UInt8}(buff), length)
@@ -190,11 +183,7 @@ function writer_write_callback{T}(c_archive::Ptr{Void},
     end
 end
 
-function writer_close_callback{T}(c_archive::Ptr{Void},
-                                  jl_archive::Ptr{Writer{GenericWriteData{T}}})
-    status = check_objptr(jl_archive, c_archive)
-    status != Status.OK && return status
-    archive = unsafe_pointer_to_objref(jl_archive)::Writer{GenericWriteData{T}}
+function writer_close_callback(c_archive, archive)
     try
         clear_error(archive)
         writer_close(archive, archive.data.data)

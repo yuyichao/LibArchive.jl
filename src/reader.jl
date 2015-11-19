@@ -151,11 +151,7 @@ function reader_skip end
 function reader_seek end
 reader_close(archive::Reader, data) = nothing
 
-function reader_open_callback{T}(c_archive::Ptr{Void},
-                                 jl_archive::Ptr{Reader{GenericReadData{T}}})
-    status = check_objptr(jl_archive, c_archive)
-    status != Status.OK && return status
-    archive = unsafe_pointer_to_objref(jl_archive)::Reader{GenericReadData{T}}
+function reader_open_callback(c_archive, archive)
     try
         clear_error(archive)
         reader_open(archive, archive.data.data)
@@ -165,11 +161,7 @@ function reader_open_callback{T}(c_archive::Ptr{Void},
     end
 end
 
-function reader_read_callback{T}(c_archive::Ptr{Void},
-                                 jl_archive::Ptr{Reader{GenericReadData{T}}},
-                                 buff::Ptr{Ptr{Void}})
-    check_objptr(jl_archive, c_archive) != Status.OK && return Cssize_t(0)
-    archive = unsafe_pointer_to_objref(jl_archive)::Reader{GenericReadData{T}}
+function reader_read_callback(c_archive, archive, buff::Ptr{Ptr{Void}})
     try
         clear_error(archive)
         bytes_read = reader_readbytes(archive, archive.data.data,
@@ -182,11 +174,7 @@ function reader_read_callback{T}(c_archive::Ptr{Void},
     end
 end
 
-function reader_skip_callback{T}(c_archive::Ptr{Void},
-                                 jl_archive::Ptr{Reader{GenericReadData{T}}},
-                                 request)
-    check_objptr(jl_archive, c_archive) != Status.OK && return Int64(0)
-    archive = unsafe_pointer_to_objref(jl_archive)::Reader{GenericReadData{T}}
+function reader_skip_callback(c_archive, archive, request)
     try
         clear_error(archive)
         return Int64(reader_skip(archive, archive.data.data, request))
@@ -196,11 +184,7 @@ function reader_skip_callback{T}(c_archive::Ptr{Void},
     end
 end
 
-function reader_seek_callback{T}(c_archive::Ptr{Void},
-                                 jl_archive::Ptr{Reader{GenericReadData{T}}},
-                                 request, whence)
-    check_objptr(jl_archive, c_archive) != Status.OK && return Int64(0)
-    archive = unsafe_pointer_to_objref(jl_archive)::Reader{GenericReadData{T}}
+function reader_seek_callback(c_archive, archive, request, whence)
     try
         clear_error(archive)
         return Int64(reader_seek(archive, archive.data.data, request, whence))
@@ -210,11 +194,7 @@ function reader_seek_callback{T}(c_archive::Ptr{Void},
     end
 end
 
-function reader_close_callback{T}(c_archive::Ptr{Void},
-                                 jl_archive::Ptr{Reader{GenericReadData{T}}})
-    status = check_objptr(jl_archive, c_archive)
-    status != Status.OK && return status
-    archive = unsafe_pointer_to_objref(jl_archive)::Reader{GenericReadData{T}}
+function reader_close_callback(c_archive, archive)
     try
         clear_error(archive)
         reader_close(archive, archive.data.data)

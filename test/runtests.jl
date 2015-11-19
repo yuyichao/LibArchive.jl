@@ -58,12 +58,6 @@ LibArchive.Reader() do reader
     @test errno(reader) == LibArchive.Status.FAILED
     @test LibArchive.error_string(reader) == string(err_ex)
     LibArchive.clear_error(reader)
-
-    @test LibArchive.check_objptr(Ptr{Void}(pointer_from_objref(reader)),
-                                  reader.ptr) == LibArchive.Status.FAILED
-    @test errno(reader) == LibArchive.Status.FAILED
-    @test LibArchive.error_string(reader) == "TypeError"
-    LibArchive.clear_error(reader)
 end
 
 LibArchive.Reader("/this_file_does_not_exist") do reader

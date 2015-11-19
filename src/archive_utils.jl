@@ -46,16 +46,6 @@ copy_error(dest::Archive, src::Archive) =
 file_count(archive::Archive) =
     ccall((:archive_file_count, libarchive), Cint, (Ptr{Void},), archive)
 
-function check_objptr{T}(ptr::Ptr{T}, c_archive::Ptr{Void})
-    if !isa(unsafe_pointer_to_objref(ptr), T)
-        ccall((:archive_set_error, libarchive),
-              Void, (Ptr{Void}, Cint, Ptr{Cchar}),
-              c_archive, Status.FAILED, "TypeError")
-        return Status.FAILED
-    end
-    return Status.OK
-end
-
 function set_exception(archive::Archive, ex::ANY)
     status, msg = if isa(ex, EOFError)
         Status.EOF, "end of file"
