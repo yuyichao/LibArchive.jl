@@ -176,7 +176,7 @@ function writer_write_callback(c_archive, archive, buff::Ptr{Void},
     try
         clear_error(archive)
         ary = pointer_to_array(Ptr{UInt8}(buff), length)
-        return writer_writebytes(archive, archive.data.data, ary)
+        return Cssize_t(writer_writebytes(archive, archive.data.data, ary))
     catch ex
         set_exception(archive, ex)
         return Cssize_t(-1)
