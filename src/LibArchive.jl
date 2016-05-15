@@ -4,6 +4,14 @@ __precompile__()
 
 module LibArchive
 
+if isdefined(Base, :unsafe_read)
+    # I forgot to add `unsafe_read` to `Compat` ;-P
+    import Base: unsafe_read, unsafe_write
+else
+    const unsafe_read = read
+    const unsafe_write = write
+end
+
 export ArchiveRetry, ArchiveFailed, ArchiveFatal
 
 const depfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")

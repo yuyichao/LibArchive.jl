@@ -208,8 +208,7 @@ function reader_close_callback(c_archive, archive)
     end
 end
 
-reader_readbytes(archive, io::IO, buff) =
-    readbytes!(io, buff)
+reader_readbytes(archive, io::IO, buff) = readbytes!(io, buff)
 reader_skip(archive, io::IO, sz) =
     (skip(io, sz); sz)
 
@@ -252,9 +251,54 @@ header_position(archive::Reader) =
           Int64, (Ptr{Void},), archive)
 
 "Read data from the body of an entry.  Similar to read(2)."
-Base.readbytes!(archive::Reader, b::Vector{UInt8}, nb=length(b)) =
-    ccall((:archive_read_data, libarchive), Cssize_t,
-          (Ptr{Void}, Ptr{Void}, Csize_t), archive, b, nb)
+@inline function unsafe_archive_read(archive::Reader, ptr::Ptr{UInt8}, sz::UInt)
+    nb = ccall((:archive_read_data, libarchive), Cssize_t,
+               (Ptr{Void}, Ptr{Void}, Csize_t), archive, ptr, sz)
+    nb < 0 && _la_error(Cint(nb), archive)
+    nb % Csize_t
+end
+
+"Read data from the body of an entry.  Similar to read(2)."
+function unsafe_read(archive::Reader, ptr::Ptr{UInt8}, sz::UInt)
+    unsafe_archive_read(archive, ptr, sz) != sz && throw(EOFError())
+    nothing
+end
+
+"Read data from the body of an entry.  Similar to read(2)."
+function Base.read(archive::Reader, ::Type{UInt8})
+    b = Ref{UInt8}()
+    unsafe_read(archive, Base.unsafe_convert(Ptr{UInt8}, b), UInt(1))
+    b[]
+end
+
+"Read data from the body of an entry.  Similar to read(2)."
+function Base.readbytes!(archive::Reader, b::Array{UInt8}, nb=length(b))
+    nbread = unsafe_archive_read(archive, Base.unsafe_convert(Ptr{UInt8}, b),
+                                 UInt(nb))
+    nbread < nb && resize!(b, nbread)
+    nbread
+end
+
+"Read data from the body of an entry.  Similar to read(2)."
+function Base.read(archive::Reader)
+    # Maybe we can optimize this with block read?
+    block_size = UInt(1024)
+    res = Vector{UInt8}(block_size)
+    pos = 1
+    while true
+        ptr = Base.unsafe_convert(Ptr{UInt8}, Ref(res, pos))
+        nbread = unsafe_archive_read(archive, ptr, block_size)
+        if nbread < block_size
+            resize!(res, nbread + pos - 1)
+            return res
+        end
+        pos = Int(pos + block_size)
+        resize!(res, pos + block_size - 1)
+    end
+end
+
+"Read data from the body of an entry.  Similar to read(2)."
+@inline Base.readavailable(archive::Reader) = read(archive)
 
 "Seek within the body of an entry.  Similar to lseek(2)."
 Base.seek(archive::Reader, offset, what) =
