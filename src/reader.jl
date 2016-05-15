@@ -281,3 +281,59 @@ Reader(f::Function, args...; kws...) =
 @deprecate mem_reader{T<:Vector}(data::T, size=sizeof(data)) Reader(data, size)
 @deprecate mem_reader(obj, size=sizeof(obj)) Reader(pointer(obj), size, obj)
 @deprecate gen_reader(data, buff_size=10240) Reader(data, buff_size)
+
+# /*
+#  * Set read options.
+#  */
+# /* Apply option to the format only. */
+# int archive_read_set_format_option(struct archive *_a,
+# 			    const char *m, const char *o,
+# 			    const char *v);
+# /* Apply option to the filter only. */
+# int archive_read_set_filter_option(struct archive *_a,
+# 			    const char *m, const char *o,
+# 			    const char *v);
+# /* Apply option to both the format and the filter. */
+# int archive_read_set_option(struct archive *_a,
+# 			    const char *m, const char *o,
+# 			    const char *v);
+# /* Apply option string to both the format and the filter. */
+# int archive_read_set_options(struct archive *_a,
+# 			    const char *opts);
+
+# /*
+#  * A zero-copy version of archive_read_data that also exposes the file offset
+#  * of each returned block.  Note that the client has no way to specify
+#  * the desired size of the block.  The API does guarantee that offsets will
+#  * be strictly increasing and that returned blocks will not overlap.
+#  */
+# int archive_read_data_block(struct archive *a,
+#                    const void **buff, size_t *size, int64_t *offset);
+
+# /*-
+#  * Convenience function to recreate the current entry (whose header
+#  * has just been read) on disk.
+#  *
+#  * This does quite a bit more than just copy data to disk. It also:
+#  *  - Creates intermediate directories as required.
+#  *  - Manages directory permissions:  non-writable directories will
+#  *    be initially created with write permission enabled; when the
+#  *    archive is closed, dir permissions are edited to the values specified
+#  *    in the archive.
+#  *  - Checks hardlinks:  hardlinks will not be extracted unless the
+#  *    linked-to file was also extracted within the same session. (TODO)
+#  */
+
+# /* The "flags" argument selects optional behavior, 'OR' the flags you want. */
+
+# int archive_read_extract(struct archive *, struct archive_entry *,
+# 		     int flags);
+# int archive_read_extract2(struct archive *, struct archive_entry *,
+# 		     struct archive * /* dest */);
+# void	 archive_read_extract_set_progress_callback(struct archive *,
+#      void (*_progress_func)(void *), void *_user_data);
+
+# /* Record the dev/ino of a file that will not be written.  This is
+#  * generally set to the dev/ino of the archive being read. */
+# void		archive_read_extract_set_skip_file(struct archive *,
+#      int64_t, int64_t);

@@ -407,3 +407,91 @@ function sparse_next(entry::Entry)
               (Ptr{Void}, Ptr{Int64}, Ptr{Int64}), entry, offset, len)
     offset[], len[]
 end
+
+# Utility to match up hardlinks.
+#
+# The 'struct archive_entry_linkresolver' is a cache of archive entries
+# for files with multiple links.  Here's how to use it:
+#   1. Create a lookup object with archive_entry_linkresolver_new()
+#   2. Tell it the archive format you're using.
+#   3. Hand each archive_entry to archive_entry_linkify().
+#      That function will return 0, 1, or 2 entries that should
+#      be written.
+#   4. Call archive_entry_linkify(resolver, NULL) until
+#      no more entries are returned.
+#   5. Call archive_entry_linkresolver_free(resolver) to free resources.
+#
+# The entries returned have their hardlink and size fields updated
+# appropriately.  If an entry is passed in that does not refer to
+# a file with multiple links, it is returned unchanged.  The intention
+# is that you should be able to simply filter all entries through
+# this machine.
+#
+# To make things more efficient, be sure that each entry has a valid
+# nlinks value.  The hardlink cache uses this to track when all links
+# have been found.  If the nlinks value is zero, it will keep every
+# name in the cache indefinitely, which can use a lot of memory.
+#
+# Note that archive_entry_size() is reset to zero if the file
+# body should not be written to the archive.  Pay attention!
+# struct archive_entry_linkresolver;
+
+# There are three different strategies for marking hardlinks.
+# The descriptions below name them after the best-known
+# formats that rely on each strategy:
+#
+# "Old cpio" is the simplest, it always returns any entry unmodified.
+#    As far as I know, only cpio formats use this.  Old cpio archives
+#    store every link with the full body; the onus is on the dearchiver
+#    to detect and properly link the files as they are restored.
+# "tar" is also pretty simple; it caches a copy the first time it sees
+#    any link.  Subsequent appearances are modified to be hardlink
+#    references to the first one without any body.  Used by all tar
+#    formats, although the newest tar formats permit the "old cpio" strategy
+#    as well.  This strategy is very simple for the dearchiver,
+#    and reasonably straightforward for the archiver.
+# "new cpio" is trickier.  It stores the body only with the last
+#    occurrence.  The complication is that we might not
+#    see every link to a particular file in a single session, so
+#    there's no easy way to know when we've seen the last occurrence.
+#    The solution here is to queue one link until we see the next.
+#    At the end of the session, you can enumerate any remaining
+#    entries by calling archive_entry_linkify(NULL) and store those
+#    bodies.  If you have a file with three links l1, l2, and l3,
+#    you'll get the following behavior if you see all three links:
+#           linkify(l1) => NULL   (the resolver stores l1 internally)
+#           linkify(l2) => l1     (resolver stores l2, you write l1)
+#           linkify(l3) => l2, l3 (all links seen, you can write both).
+#    If you only see l1 and l2, you'll get this behavior:
+#           linkify(l1) => NULL
+#           linkify(l2) => l1
+#           linkify(NULL) => l2   (at end, you retrieve remaining links)
+#    As the name suggests, this strategy is used by newer cpio variants.
+#    It's noticeably more complex for the archiver, slightly more complex
+#    for the dearchiver than the tar strategy, but makes it straightforward
+#    to restore a file using any link by simply continuing to scan until
+#    you see a link that is stored with a body.  In contrast, the tar
+#    strategy requires you to rescan the archive from the beginning to
+#    correctly extract an arbitrary link.
+
+# struct archive_entry_linkresolver *archive_entry_linkresolver_new(void);
+# void archive_entry_linkresolver_set_strategy(
+#     struct archive_entry_linkresolver *, Cint /* format_code */);
+# void archive_entry_linkresolver_free(struct archive_entry_linkresolver *);
+# void archive_entry_linkify(struct archive_entry_linkresolver *,
+#     struct archive_entry **, struct archive_entry **);
+# struct archive_entry *archive_entry_partial_links(
+#     struct archive_entry_linkresolver *res, Cuint *links);
+
+# Routines to bulk copy fields to/from a platform-native "struct
+# stat."  Libarchive used to just store a struct stat inside of each
+# archive_entry object, but this created issues when trying to
+# manipulate archives on systems different than the ones they were
+# created on.
+# stat(entry::Entry) =
+#     StatStruct(ccall((:archive_entry_stat, libarchive),
+#                      Ptr{UInt8}, (Ptr{Void},), entry))
+# function set_stat(entry::Entry, stat)
+#     ccall((:archive_entry_copy_stat, libarchive),
+#           Void, (Ptr{Void}, Ptr{UInt8}), entry, stat)
+# end

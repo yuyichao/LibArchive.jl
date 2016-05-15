@@ -239,3 +239,26 @@ Writer(f::Function, args...; kws...) =
 @deprecate mem_writer(data::Vector) Writer(data)
 @deprecate mem_writer(obj) Writer(pointer(obj), sizeof(obj), obj)
 @deprecate gen_writer(data) Writer(data)
+
+# /*
+#  * Set write options.
+#  */
+# /* Apply option to the format only. */
+# int archive_write_set_format_option(struct archive *_a,
+# 			    const char *m, const char *o,
+# 			    const char *v);
+# /* Apply option to the filter only. */
+# int archive_write_set_filter_option(struct archive *_a,
+# 			    const char *m, const char *o,
+# 			    const char *v);
+# /* Apply option to both the format and the filter. */
+# int archive_write_set_option(struct archive *_a,
+# 			    const char *m, const char *o,
+# 			    const char *v);
+# /* Apply option string to both the format and the filter. */
+# int archive_write_set_options(struct archive *_a,
+# 			    const char *opts);
+
+# /* This interface is currently only available for archive_write_disk handles.  */
+# ssize_t	 archive_write_data_block(struct archive *,
+# 				    const void *, size_t, int64_t);
