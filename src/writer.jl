@@ -209,11 +209,22 @@ function write_header(archive::Writer, entry::Entry)
     @_la_call(archive_write_header, (Ptr{Void}, Ptr{Void}), archive, entry)
 end
 
-function write_data(archive::Writer, data)
+@inline function unsafe_archive_write(archive::Writer, buf, len)
     ensure_open(archive)
-    ccall((:archive_write_data, libarchive),
-          Cssize_t, (Ptr{Void}, Ptr{Void}, Csize_t),
-          archive, data, sizeof(data))
+    nb = ccall((:archive_write_data, libarchive),
+               Cssize_t, (Ptr{Void}, Ptr{Void}, Csize_t), archive, buf, len)
+    nb < 0 && _la_error(Cint(nb), archive)
+    nb % Csize_t
+end
+
+unsafe_write(archive::Writer, buf::Ptr{UInt8}, len::UInt) =
+    unsafe_archive_write(archive, buf, len)
+Base.write(archive::Writer, c::UInt8) =
+    unsafe_archive_write(archive, Ref(c), 1)
+
+if !isdefined(Base, :unsafe_write)
+    Base.write(archive::Writer, data::Array) =
+        unsafe_archive_write(archive, data, sizeof(data))
 end
 
 function finish_entry(archive::Writer)
@@ -239,6 +250,7 @@ Writer(f::Function, args...; kws...) =
 @deprecate mem_writer(data::Vector) Writer(data)
 @deprecate mem_writer(obj) Writer(pointer(obj), sizeof(obj), obj)
 @deprecate gen_writer(data) Writer(data)
+@deprecate write_data(archive::Writer, data) write(archive, data)
 
 # /*
 #  * Set write options.
