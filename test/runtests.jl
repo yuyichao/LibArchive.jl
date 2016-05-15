@@ -510,9 +510,7 @@ function verify_archive(reader)
     @test LibArchive.size(entry) == 10
     @test LibArchive.perm(entry) == 0o644
     @test LibArchive.filetype(entry) == LibArchive.FileType.REG
-    data = Vector{UInt8}(10)
-    @test LibArchive.readbytes!(reader, data) == 10
-    @test data == ("0123456789").data
+    @test readstring(reader) == "0123456789"
     LibArchive.free(entry)
 
     entry = LibArchive.next_header(reader)
