@@ -26,13 +26,13 @@
 abstract WriterData
 
 type Writer{T<:WriterData} <: Archive
-    ptr::Ptr{Void}
     data::T
+    ptr::Ptr{Void}
     opened::Bool
     function Writer(data::T)
         ptr = ccall((:archive_write_new, libarchive), Ptr{Void}, ())
         ptr == C_NULL && throw(OutOfMemoryError())
-        obj = new(ptr, data, false)
+        obj = new(data, ptr, false)
         finalizer(obj, free)
         obj
     end

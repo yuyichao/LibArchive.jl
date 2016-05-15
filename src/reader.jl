@@ -24,13 +24,17 @@
 abstract ReaderData
 
 type Reader{T<:ReaderData} <: Archive
-    ptr::Ptr{Void}
     data::T
+    ptr::Ptr{Void}
     opened::Bool
     function Reader(data::T)
         ptr = ccall((:archive_read_new, libarchive), Ptr{Void}, ())
         ptr == C_NULL && throw(OutOfMemoryError())
-        obj = new(ptr, data, false)
+        return Reader{T}(data, ptr, false)
+    end
+    # For pre-openned archive. (e.g. from LibALPM)
+    function Reader(data::T, ptr::Ptr{Void}, opened::Bool)
+        obj = new(data, ptr, opened)
         finalizer(obj, free)
         obj
     end
