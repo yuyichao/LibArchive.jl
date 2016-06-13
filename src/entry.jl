@@ -6,8 +6,11 @@
 
 # This will be changed to `Cint` in libarchive 4.0
 const _la_mode_t = Cushort
-@unix_only const _Cdev_t = UInt64
-@windows_only const _Cdev_t = Cuint
+if is_unix()
+    const _Cdev_t = UInt64
+else
+    const _Cdev_t = Cuint
+end
 
 type Entry
     ptr::Ptr{Void}
@@ -114,17 +117,17 @@ function fflags(entry::Entry)
     set[], clear[]
 end
 fflags_text(entry::Entry) =
-    bytestring(ccall((:archive_entry_fflags_text, libarchive),
-                     Cstring, (Ptr{Void},), entry))
+    unsafe_string(ccall((:archive_entry_fflags_text, libarchive),
+                        Cstring, (Ptr{Void},), entry))
 gid(entry::Entry) =
     ccall((:archive_entry_gid, libarchive), Int64, (Ptr{Void},), entry)
 gname(entry::Entry) =
-    bytestring(ccall((:archive_entry_gname, libarchive),
-                     Cstring, (Ptr{Void},), entry))
+    unsafe_string(ccall((:archive_entry_gname, libarchive),
+                        Cstring, (Ptr{Void},), entry))
 
 hardlink(entry::Entry) =
-    bytestring(ccall((:archive_entry_hardlink, libarchive),
-                     Cstring, (Ptr{Void},), entry))
+    unsafe_string(ccall((:archive_entry_hardlink, libarchive),
+                        Cstring, (Ptr{Void},), entry))
 ino(entry::Entry) =
     ccall((:archive_entry_ino, libarchive), Int64, (Ptr{Void},), entry)
 ino_is_set(entry::Entry) =
@@ -145,8 +148,8 @@ mtime_is_set(entry::Entry) = ccall((:archive_entry_mtime_is_set, libarchive),
 nlink(entry::Entry) =
     ccall((:archive_entry_nlink, libarchive), Cuint, (Ptr{Void},), entry)
 pathname(entry::Entry) =
-    bytestring(ccall((:archive_entry_pathname, libarchive),
-                     Cstring, (Ptr{Void},), entry))
+    unsafe_string(ccall((:archive_entry_pathname, libarchive),
+                        Cstring, (Ptr{Void},), entry))
 
 perm(entry::Entry) =
     Cint(ccall((:archive_entry_perm, libarchive),
@@ -161,24 +164,24 @@ rdevminor(entry::Entry) =
     UInt64(ccall((:archive_entry_rdevminor, libarchive),
                  _Cdev_t, (Ptr{Void},), entry))
 sourcepath(entry::Entry) =
-    bytestring(ccall((:archive_entry_sourcepath, libarchive),
-                     Cstring, (Ptr{Void},), entry))
+    unsafe_string(ccall((:archive_entry_sourcepath, libarchive),
+                        Cstring, (Ptr{Void},), entry))
 Base.size(entry::Entry) =
     ccall((:archive_entry_size, libarchive), Int64, (Ptr{Void},), entry)
 size_is_set(entry::Entry) =
     ccall((:archive_entry_size_is_set, libarchive),
           Cint, (Ptr{Void},), entry) != 0
 strmode(entry::Entry) =
-    bytestring(ccall((:archive_entry_strmode, libarchive),
-                     Cstring, (Ptr{Void},), entry))
+    unsafe_string(ccall((:archive_entry_strmode, libarchive),
+                        Cstring, (Ptr{Void},), entry))
 symlink(entry::Entry) =
-    bytestring(ccall((:archive_entry_symlink, libarchive),
-                     Cstring, (Ptr{Void},), entry))
+    unsafe_string(ccall((:archive_entry_symlink, libarchive),
+                        Cstring, (Ptr{Void},), entry))
 uid(entry::Entry) =
     ccall((:archive_entry_uid, libarchive), Int64, (Ptr{Void},), entry)
 uname(entry::Entry) =
-    bytestring(ccall((:archive_entry_uname, libarchive),
-                     Cstring, (Ptr{Void},), entry))
+    unsafe_string(ccall((:archive_entry_uname, libarchive),
+                        Cstring, (Ptr{Void},), entry))
 
 set_atime(entry::Entry, t, ns) =
     ccall((:archive_entry_set_atime, libarchive),
@@ -329,7 +332,7 @@ function acl_next(entry::Entry, want)
     @_la_call(archive_entry_acl_next,
               (Ptr{Void}, Cint, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint},
                Ptr{Ptr{UInt8}}), entry, want, typ, perm, tag, qual, name)
-    typ[], perm[], tag[], qual[], bytestring(name[])
+    typ[], perm[], tag[], qual[], unsafe_string(name[])
 end
 
 """
@@ -346,8 +349,8 @@ can include any of the following:
   default ACL entry, as used in old Solaris ACLs.
 """
 acl_text(entry::Entry, flags) =
-    bytestring(ccall((:archive_entry_acl_text, libarchive), Cstring,
-                     (Ptr{Void}, Cint), entry, flags))
+    unsafe_string(ccall((:archive_entry_acl_text, libarchive), Cstring,
+                        (Ptr{Void}, Cint), entry, flags))
 
 "Return a count of entries matching `want`"
 acl_count(entry::Entry, want) =
@@ -384,7 +387,7 @@ function xattr_next(entry::Entry)
     buff = Vector{UInt8}(len[])
     ccall(:memcpy, Ptr{Void}, (Ptr{Void}, Ptr{Void}, Csize_t),
           buff, value[], len[])
-    bytestring(name[]), buff
+    unsafe_string(name[]), buff
 end
 
 # sparse

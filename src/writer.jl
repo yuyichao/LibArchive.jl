@@ -165,7 +165,7 @@ function writer_open_callback(c_archive, archive)
     try
         clear_error(archive)
         writer_open(archive, archive.data.data)
-        return errno(archive) == 0 ? Cint(0) : Status.WARN
+        return Libc.errno(archive) == 0 ? Cint(0) : Status.WARN
     catch ex
         return set_exception(archive, ex)
     end
@@ -175,7 +175,7 @@ function writer_write_callback(c_archive, archive, buff::Ptr{Void},
                                length::Csize_t)
     try
         clear_error(archive)
-        ary = pointer_to_array(Ptr{UInt8}(buff), length)
+        ary = unsafe_wrap(Array, Ptr{UInt8}(buff), length)
         return Cssize_t(writer_writebytes(archive, archive.data.data, ary))
     catch ex
         set_exception(archive, ex)
@@ -187,7 +187,7 @@ function writer_close_callback(c_archive, archive)
     try
         clear_error(archive)
         writer_close(archive, archive.data.data)
-        return errno(archive) == 0 ? Cint(0) : Status.WARN
+        return Libc.errno(archive) == 0 ? Cint(0) : Status.WARN
     catch ex
         return set_exception(archive, ex)
     end

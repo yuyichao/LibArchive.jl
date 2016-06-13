@@ -15,18 +15,18 @@ libarchive = library_dependency("libarchive",
                                 aliases=["libarchive", "libarchive-12"],
                                 validate=validate_libarchive)
 
-@linux_only begin
+if is_linux()
     provides(Pacman, "libarchive", libarchive)
     provides(AptGet, "libarchive12", libarchive)
     provides(Yum, "libarchive", libarchive)
 end
 
-@windows_only begin
+if is_windows()
     using WinRPM
     provides(WinRPM.RPM, "libarchive12", libarchive, os=:Windows)
 end
 
-@osx_only begin
+if is_apple()
     using Homebrew
     provides(Homebrew.HB, "libarchive", libarchive, os=:Darwin)
 end

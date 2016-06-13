@@ -4,6 +4,13 @@ __precompile__()
 
 module LibArchive
 
+using Compat
+
+if !isdefined(:unsafe_string)
+    unsafe_string(args...) = bytestring(args...)
+    unsafe_wrap(::Type{Array}, ptr, len) = pointer_to_array(ptr, len)
+end
+
 if isdefined(Base, :unsafe_read)
     # I forgot to add `unsafe_read` to `Compat` ;-P
     import Base: unsafe_read, unsafe_write

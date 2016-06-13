@@ -159,7 +159,7 @@ function reader_open_callback(c_archive, archive)
     try
         clear_error(archive)
         reader_open(archive, archive.data.data)
-        return errno(archive) == 0 ? Cint(0) : Status.WARN
+        return Libc.errno(archive) == 0 ? Cint(0) : Status.WARN
     catch ex
         return set_exception(archive, ex)
     end
@@ -202,7 +202,7 @@ function reader_close_callback(c_archive, archive)
     try
         clear_error(archive)
         reader_close(archive, archive.data.data)
-        return errno(archive) == 0 ? Cint(0) : Status.WARN
+        return Libc.errno(archive) == 0 ? Cint(0) : Status.WARN
     catch ex
         return set_exception(archive, ex)
     end

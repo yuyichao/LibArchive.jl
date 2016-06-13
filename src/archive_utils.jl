@@ -20,19 +20,19 @@ filter_code(archive::Archive, n) =
     ccall((:archive_filter_code, libarchive), Cint, (Ptr{Void}, Cint),
           archive, n)
 filter_name(archive::Archive, n) =
-    bytestring(ccall((:archive_filter_name, libarchive),
-                     Cstring, (Ptr{Void}, Cint), archive, n))
+    unsafe_string(ccall((:archive_filter_name, libarchive),
+                        Cstring, (Ptr{Void}, Cint), archive, n))
 
-Base.errno(archive::Archive) =
+Libc.errno(archive::Archive) =
     ccall((:archive_errno, libarchive), Cint, (Ptr{Void},), archive)
 function error_string(archive::Archive)
     cstr = ccall((:archive_error_string, libarchive),
                  Ptr{UInt8}, (Ptr{Void},), archive)
-    cstr == C_NULL ? "" : bytestring(cstr)
+    cstr == C_NULL ? "" : unsafe_string(cstr)
 end
 format_name(archive::Archive) =
-    bytestring(ccall((:archive_format_name, libarchive),
-                     Cstring, (Ptr{Void},), archive))
+    unsafe_string(ccall((:archive_format_name, libarchive),
+                        Cstring, (Ptr{Void},), archive))
 format(archive::Archive) =
     ccall((:archive_format, libarchive), Cint, (Ptr{Void},), archive)
 clear_error(archive::Archive) =
@@ -59,6 +59,6 @@ function set_exception(archive::Archive, ex::ANY)
         Status.FAILED, string(ex)
     end
     # Only set error if there isn't already one
-    errno(archive) == 0 && set_error(archive, status, msg)
+    Libc.errno(archive) == 0 && set_error(archive, status, msg)
     status
 end

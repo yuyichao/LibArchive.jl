@@ -29,33 +29,33 @@ end
 
 LibArchive.Reader() do reader
     LibArchive.set_exception(reader, EOFError())
-    @test errno(reader) == LibArchive.Status.EOF
+    @test Libc.errno(reader) == LibArchive.Status.EOF
     @test LibArchive.error_string(reader) == "end of file"
     LibArchive.clear_error(reader)
 
     LibArchive.set_exception(reader, ArchiveRetry("retry"))
-    @test errno(reader) == LibArchive.Status.RETRY
+    @test Libc.errno(reader) == LibArchive.Status.RETRY
     @test LibArchive.error_string(reader) == "retry"
     LibArchive.clear_error(reader)
 
     LibArchive.set_exception(reader, ArchiveFailed("failed"))
-    @test errno(reader) == LibArchive.Status.FAILED
+    @test Libc.errno(reader) == LibArchive.Status.FAILED
     @test LibArchive.error_string(reader) == "failed"
     LibArchive.clear_error(reader)
 
     LibArchive.set_exception(reader, ArchiveFatal("fatal"))
-    @test errno(reader) == LibArchive.Status.FATAL
+    @test Libc.errno(reader) == LibArchive.Status.FATAL
     @test LibArchive.error_string(reader) == "fatal"
     LibArchive.Reader() do reader2
         LibArchive.copy_error(reader2, reader)
-        @test errno(reader2) == LibArchive.Status.FATAL
+        @test Libc.errno(reader2) == LibArchive.Status.FATAL
         @test LibArchive.error_string(reader2) == "fatal"
     end
     LibArchive.clear_error(reader)
 
     err_ex = ErrorException("error")
     LibArchive.set_exception(reader, err_ex)
-    @test errno(reader) == LibArchive.Status.FAILED
+    @test Libc.errno(reader) == LibArchive.Status.FAILED
     @test LibArchive.error_string(reader) == string(err_ex)
     LibArchive.clear_error(reader)
 end
@@ -168,7 +168,7 @@ LibArchive.Writer() do writer
     LibArchive.add_filter_compress(writer)
     LibArchive.add_filter_gzip(writer)
     LibArchive.add_filter_none(writer)
-    @osx? nothing : begin
+    if !is_apple()
         LibArchive.add_filter_lzip(writer)
         LibArchive.add_filter_lzma(writer)
         LibArchive.add_filter_xz(writer)
@@ -327,7 +327,7 @@ let
     LibArchive.free(entry)
 end
 
-@unix_only let
+is_unix() && let
     # fflags
     entry = LibArchive.Entry()
     @test_throws ArgumentError LibArchive.fflags_text(entry)
@@ -363,14 +363,14 @@ let
 
     LibArchive.set_gname(entry, "group_name1")
     @test LibArchive.gname(entry) == "group_name1"
-    @unix_only begin
+    if is_unix()
         LibArchive.set_gname(entry, "Group αβ")
         @test LibArchive.gname(entry) == "Group αβ"
     end
 
     LibArchive.set_uname(entry, "user_name1")
     @test LibArchive.uname(entry) == "user_name1"
-    @unix_only begin
+    if is_unix()
         LibArchive.set_uname(entry, "User γδ")
         @test LibArchive.uname(entry) == "User γδ"
     end
@@ -389,7 +389,7 @@ let
     @test_throws ArgumentError LibArchive.hardlink(entry)
     LibArchive.set_hardlink(entry, "hard_link1")
     @test LibArchive.hardlink(entry) == "hard_link1"
-    @unix_only begin
+    if is_unix()
         LibArchive.set_hardlink(entry, "Hard Link α")
         @test LibArchive.hardlink(entry) == "Hard Link α"
     end
@@ -399,7 +399,7 @@ let
     @test_throws ArgumentError LibArchive.pathname(entry)
     LibArchive.set_pathname(entry, "path_name2")
     @test LibArchive.pathname(entry) == "path_name2"
-    @unix_only begin
+    if is_unix()
         LibArchive.set_pathname(entry, "Path Name β")
         @test LibArchive.pathname(entry) == "Path Name β"
     end
@@ -409,7 +409,7 @@ let
     @test_throws ArgumentError LibArchive.sourcepath(entry)
     LibArchive.set_sourcepath(entry, "source_path3")
     @test LibArchive.sourcepath(entry) == "source_path3"
-    @unix_only begin
+    if is_unix()
         LibArchive.set_sourcepath(entry, "Source Path γ")
         @test LibArchive.sourcepath(entry) == "Source Path γ"
     end
@@ -419,7 +419,7 @@ let
     @test_throws ArgumentError LibArchive.symlink(entry)
     LibArchive.set_symlink(entry, "sym_link4")
     @test LibArchive.symlink(entry) == "sym_link4"
-    @unix_only begin
+    if is_unix()
         LibArchive.set_symlink(entry, "Sym Link δ")
         @test LibArchive.symlink(entry) == "Sym Link δ"
     end
@@ -553,7 +553,7 @@ mktempdir() do d
     end
 end
 
-@unix_only mktempdir() do d
+is_unix() && mktempdir() do d
     cd(d) do
         info("    FD")
         fd = ccall(:open, Cint, (Cstring, Cint, Cint),
