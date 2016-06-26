@@ -118,16 +118,16 @@ function fflags(entry::Entry)
 end
 fflags_text(entry::Entry) =
     unsafe_string(ccall((:archive_entry_fflags_text, libarchive),
-                        Cstring, (Ptr{Void},), entry))
+                        Ptr{UInt8}, (Ptr{Void},), entry))
 gid(entry::Entry) =
     ccall((:archive_entry_gid, libarchive), Int64, (Ptr{Void},), entry)
 gname(entry::Entry) =
     unsafe_string(ccall((:archive_entry_gname, libarchive),
-                        Cstring, (Ptr{Void},), entry))
+                        Ptr{UInt8}, (Ptr{Void},), entry))
 
 hardlink(entry::Entry) =
     unsafe_string(ccall((:archive_entry_hardlink, libarchive),
-                        Cstring, (Ptr{Void},), entry))
+                        Ptr{UInt8}, (Ptr{Void},), entry))
 ino(entry::Entry) =
     ccall((:archive_entry_ino, libarchive), Int64, (Ptr{Void},), entry)
 ino_is_set(entry::Entry) =
@@ -149,7 +149,7 @@ nlink(entry::Entry) =
     ccall((:archive_entry_nlink, libarchive), Cuint, (Ptr{Void},), entry)
 pathname(entry::Entry) =
     unsafe_string(ccall((:archive_entry_pathname, libarchive),
-                        Cstring, (Ptr{Void},), entry))
+                        Ptr{UInt8}, (Ptr{Void},), entry))
 
 perm(entry::Entry) =
     Cint(ccall((:archive_entry_perm, libarchive),
@@ -165,7 +165,7 @@ rdevminor(entry::Entry) =
                  _Cdev_t, (Ptr{Void},), entry))
 sourcepath(entry::Entry) =
     unsafe_string(ccall((:archive_entry_sourcepath, libarchive),
-                        Cstring, (Ptr{Void},), entry))
+                        Ptr{UInt8}, (Ptr{Void},), entry))
 Base.size(entry::Entry) =
     ccall((:archive_entry_size, libarchive), Int64, (Ptr{Void},), entry)
 size_is_set(entry::Entry) =
@@ -173,15 +173,15 @@ size_is_set(entry::Entry) =
           Cint, (Ptr{Void},), entry) != 0
 strmode(entry::Entry) =
     unsafe_string(ccall((:archive_entry_strmode, libarchive),
-                        Cstring, (Ptr{Void},), entry))
+                        Ptr{UInt8}, (Ptr{Void},), entry))
 symlink(entry::Entry) =
     unsafe_string(ccall((:archive_entry_symlink, libarchive),
-                        Cstring, (Ptr{Void},), entry))
+                        Ptr{UInt8}, (Ptr{Void},), entry))
 uid(entry::Entry) =
     ccall((:archive_entry_uid, libarchive), Int64, (Ptr{Void},), entry)
 uname(entry::Entry) =
     unsafe_string(ccall((:archive_entry_uname, libarchive),
-                        Cstring, (Ptr{Void},), entry))
+                        Ptr{UInt8}, (Ptr{Void},), entry))
 
 set_atime(entry::Entry, t, ns) =
     ccall((:archive_entry_set_atime, libarchive),
@@ -349,7 +349,7 @@ can include any of the following:
   default ACL entry, as used in old Solaris ACLs.
 """
 acl_text(entry::Entry, flags) =
-    unsafe_string(ccall((:archive_entry_acl_text, libarchive), Cstring,
+    unsafe_string(ccall((:archive_entry_acl_text, libarchive), Ptr{UInt8},
                         (Ptr{Void}, Cint), entry, flags))
 
 "Return a count of entries matching `want`"

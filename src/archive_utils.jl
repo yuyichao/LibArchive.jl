@@ -21,7 +21,7 @@ filter_code(archive::Archive, n) =
           archive, n)
 filter_name(archive::Archive, n) =
     unsafe_string(ccall((:archive_filter_name, libarchive),
-                        Cstring, (Ptr{Void}, Cint), archive, n))
+                        Ptr{UInt8}, (Ptr{Void}, Cint), archive, n))
 
 Libc.errno(archive::Archive) =
     ccall((:archive_errno, libarchive), Cint, (Ptr{Void},), archive)
@@ -32,7 +32,7 @@ function error_string(archive::Archive)
 end
 format_name(archive::Archive) =
     unsafe_string(ccall((:archive_format_name, libarchive),
-                        Cstring, (Ptr{Void},), archive))
+                        Ptr{UInt8}, (Ptr{Void},), archive))
 format(archive::Archive) =
     ccall((:archive_format, libarchive), Cint, (Ptr{Void},), archive)
 clear_error(archive::Archive) =
