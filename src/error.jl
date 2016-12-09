@@ -30,7 +30,7 @@ macro _la_call(name, types, args...)
     call_ex = esc(:(ccall(($(QuoteNode(name)), $libarchive),
                           Cint, $types, $(args...))))
     if length(args) >= 1
-        error_expr = :(_la_error(status, $(args[1])))
+        error_expr = :(_la_error(status, $(esc(args[1]))))
     else
         error_expr = :(_la_error(status))
     end
