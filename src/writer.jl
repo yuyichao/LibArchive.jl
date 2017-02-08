@@ -29,12 +29,23 @@ type Writer{T<:WriterData} <: Archive
     data::T
     ptr::Ptr{Void}
     opened::Bool
-    function Writer(data::T)
-        ptr = ccall((:archive_write_new, libarchive), Ptr{Void}, ())
-        ptr == C_NULL && throw(OutOfMemoryError())
-        obj = new(data, ptr, false)
-        finalizer(obj, free)
-        obj
+    @static if isdefined(Base, :UnionAll)
+        function Writer{T}(data::T) where
+            T
+            ptr = ccall((:archive_write_new, libarchive), Ptr{Void}, ())
+            ptr == C_NULL && throw(OutOfMemoryError())
+            obj = new(data, ptr, false)
+            finalizer(obj, free)
+            obj
+        end
+    else
+        function Writer(data::T)
+            ptr = ccall((:archive_write_new, libarchive), Ptr{Void}, ())
+            ptr == C_NULL && throw(OutOfMemoryError())
+            obj = new(data, ptr, false)
+            finalizer(obj, free)
+            obj
+        end
     end
 end
 

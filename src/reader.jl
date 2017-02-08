@@ -27,16 +27,32 @@ type Reader{T<:ReaderData} <: Archive
     data::T
     ptr::Ptr{Void}
     opened::Bool
-    function Reader(data::T)
-        ptr = ccall((:archive_read_new, libarchive), Ptr{Void}, ())
-        ptr == C_NULL && throw(OutOfMemoryError())
-        return Reader{T}(data, ptr, false)
-    end
-    # For pre-openned archive. (e.g. from LibALPM)
-    function Reader(data::T, ptr::Ptr{Void}, opened::Bool)
-        obj = new(data, ptr, opened)
-        finalizer(obj, free)
-        obj
+    @static if isdefined(Base, :UnionAll)
+        function Reader{T}(data::T) where
+            T
+            ptr = ccall((:archive_read_new, libarchive), Ptr{Void}, ())
+            ptr == C_NULL && throw(OutOfMemoryError())
+            return Reader{T}(data, ptr, false)
+        end
+        # For pre-openned archive. (e.g. from LibALPM)
+        function Reader{T}(data::T, ptr::Ptr{Void}, opened::Bool) where
+            T
+            obj = new(data, ptr, opened)
+            finalizer(obj, free)
+            obj
+        end
+    else
+        function Reader(data::T)
+            ptr = ccall((:archive_read_new, libarchive), Ptr{Void}, ())
+            ptr == C_NULL && throw(OutOfMemoryError())
+            return Reader{T}(data, ptr, false)
+        end
+        # For pre-openned archive. (e.g. from LibALPM)
+        function Reader(data::T, ptr::Ptr{Void}, opened::Bool)
+            obj = new(data, ptr, opened)
+            finalizer(obj, free)
+            obj
+        end
     end
 end
 
