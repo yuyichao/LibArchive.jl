@@ -43,7 +43,7 @@ function version()
     VersionNumber(major, minor, patch)
 end
 
-abstract Archive <: IO
+@compat abstract type Archive <: IO end
 
 function archive_guard(func::Function, archive::Archive)
     try

@@ -21,7 +21,7 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
-abstract ReaderData
+@compat abstract type ReaderData end
 
 type Reader{T<:ReaderData} <: Archive
     data::T

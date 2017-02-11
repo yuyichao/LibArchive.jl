@@ -23,7 +23,7 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
-abstract WriterData
+@compat abstract type WriterData end
 
 type Writer{T<:WriterData} <: Archive
     data::T
