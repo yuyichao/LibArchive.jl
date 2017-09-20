@@ -2,7 +2,7 @@
 
 using LibArchive
 using Base.Test
-
+import Base.Filesystem
 using Compat
 
 ## Version
@@ -168,7 +168,7 @@ LibArchive.Writer() do writer
     LibArchive.add_filter_compress(writer)
     LibArchive.add_filter_gzip(writer)
     LibArchive.add_filter_none(writer)
-    if !is_apple()
+    if !Compat.Sys.isapple()
         LibArchive.add_filter_lzip(writer)
         LibArchive.add_filter_lzma(writer)
         LibArchive.add_filter_xz(writer)
@@ -327,7 +327,7 @@ let
     LibArchive.free(entry)
 end
 
-is_unix() && let
+Compat.Sys.isunix() && let
     # fflags
     entry = LibArchive.Entry()
     @test_throws ArgumentError LibArchive.fflags_text(entry)
@@ -363,14 +363,14 @@ let
 
     LibArchive.set_gname(entry, "group_name1")
     @test LibArchive.gname(entry) == "group_name1"
-    if is_unix()
+    if Compat.Sys.isunix()
         LibArchive.set_gname(entry, "Group αβ")
         @test LibArchive.gname(entry) == "Group αβ"
     end
 
     LibArchive.set_uname(entry, "user_name1")
     @test LibArchive.uname(entry) == "user_name1"
-    if is_unix()
+    if Compat.Sys.isunix()
         LibArchive.set_uname(entry, "User γδ")
         @test LibArchive.uname(entry) == "User γδ"
     end
@@ -389,7 +389,7 @@ let
     @test_throws ArgumentError LibArchive.hardlink(entry)
     LibArchive.set_hardlink(entry, "hard_link1")
     @test LibArchive.hardlink(entry) == "hard_link1"
-    if is_unix()
+    if Compat.Sys.isunix()
         LibArchive.set_hardlink(entry, "Hard Link α")
         @test LibArchive.hardlink(entry) == "Hard Link α"
     end
@@ -399,7 +399,7 @@ let
     @test_throws ArgumentError LibArchive.pathname(entry)
     LibArchive.set_pathname(entry, "path_name2")
     @test LibArchive.pathname(entry) == "path_name2"
-    if is_unix()
+    if Compat.Sys.isunix()
         LibArchive.set_pathname(entry, "Path Name β")
         @test LibArchive.pathname(entry) == "Path Name β"
     end
@@ -409,7 +409,7 @@ let
     @test_throws ArgumentError LibArchive.sourcepath(entry)
     LibArchive.set_sourcepath(entry, "source_path3")
     @test LibArchive.sourcepath(entry) == "source_path3"
-    if is_unix()
+    if Compat.Sys.isunix()
         LibArchive.set_sourcepath(entry, "Source Path γ")
         @test LibArchive.sourcepath(entry) == "Source Path γ"
     end
@@ -419,7 +419,7 @@ let
     @test_throws ArgumentError LibArchive.symlink(entry)
     LibArchive.set_symlink(entry, "sym_link4")
     @test LibArchive.symlink(entry) == "sym_link4"
-    if is_unix()
+    if Compat.Sys.isunix()
         LibArchive.set_symlink(entry, "Sym Link δ")
         @test LibArchive.symlink(entry) == "Sym Link δ"
     end
@@ -511,7 +511,7 @@ function verify_archive(reader)
     @test LibArchive.size(entry) == 10
     @test LibArchive.perm(entry) == 0o644
     @test LibArchive.filetype(entry) == LibArchive.FileType.REG
-    @test readstring(reader) == "0123456789"
+    @test read(reader, String) == "0123456789"
     LibArchive.free(entry)
 
     entry = LibArchive.next_header(reader)
@@ -553,12 +553,12 @@ mktempdir() do d
     end
 end
 
-is_unix() && mktempdir() do d
+Compat.Sys.isunix() && mktempdir() do d
     cd(d) do
         info("    FD")
         fd = ccall(:open, Cint, (Cstring, Cint, Cint),
                    "./test.tar.gz",
-                   Compat.Filesystem.JL_O_WRONLY | Compat.Filesystem.JL_O_CREAT,
+                   Filesystem.JL_O_WRONLY | Filesystem.JL_O_CREAT,
                    0o644)
         LibArchive.Writer(fd) do writer
             LibArchive.set_format_gnutar(writer)
@@ -568,7 +568,7 @@ is_unix() && mktempdir() do d
         ccall(:close, Cint, (Cint,), fd)
 
         fd = ccall(:open, Cint, (Cstring, Cint),
-                   "./test.tar.gz", Compat.Filesystem.JL_O_RDONLY)
+                   "./test.tar.gz", Filesystem.JL_O_RDONLY)
         LibArchive.Reader(fd) do reader
             LibArchive.support_filter_gzip(reader)
             LibArchive.support_format_gnutar(reader)

@@ -6,7 +6,7 @@
 
 # This will be changed to `Cint` in libarchive 4.0
 const _la_mode_t = Cushort
-if is_unix()
+if Compat.Sys.isunix()
     const _Cdev_t = UInt64
 else
     const _Cdev_t = Cuint

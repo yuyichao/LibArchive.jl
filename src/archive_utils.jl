@@ -46,7 +46,7 @@ copy_error(dest::Archive, src::Archive) =
 file_count(archive::Archive) =
     ccall((:archive_file_count, libarchive), Cint, (Ptr{Void},), archive)
 
-function set_exception(archive::Archive, ex::ANY)
+function set_exception(archive::Archive, @nospecialize(ex))
     status, msg = if isa(ex, EOFError)
         Status.EOF, "end of file"
     elseif isa(ex, ArchiveRetry)
