@@ -23,50 +23,39 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
-@compat abstract type WriterData end
+abstract type WriterData end
 
-type Writer{T<:WriterData} <: Archive
+mutable struct Writer{T<:WriterData} <: Archive
     data::T
-    ptr::Ptr{Void}
+    ptr::Ptr{Cvoid}
     opened::Bool
-    @static if isdefined(Base, :UnionAll)
-        function Writer{T}(data::T) where
-            T
-            ptr = ccall((:archive_write_new, libarchive), Ptr{Void}, ())
-            ptr == C_NULL && throw(OutOfMemoryError())
-            obj = new(data, ptr, false)
-            finalizer(obj, free)
-            obj
-        end
-    else
-        function Writer(data::T)
-            ptr = ccall((:archive_write_new, libarchive), Ptr{Void}, ())
-            ptr == C_NULL && throw(OutOfMemoryError())
-            obj = new(data, ptr, false)
-            finalizer(obj, free)
-            obj
-        end
+    function Writer{T}(data::T) where T
+        ptr = ccall((:archive_write_new, libarchive), Ptr{Cvoid}, ())
+        ptr == C_NULL && throw(OutOfMemoryError())
+        obj = new(data, ptr, false)
+        finalizer(obj, free)
+        obj
     end
 end
 
-Writer{T<:WriterData}(data::T) = Writer{T}(data)
+Writer(data::T) where {T<:WriterData} = Writer{T}(data)
 
 function free(archive::Writer)
     ptr = archive.ptr
     ptr == C_NULL && return
-    ccall((:archive_write_free, libarchive), Cint, (Ptr{Void},), ptr)
+    ccall((:archive_write_free, libarchive), Cint, (Ptr{Cvoid},), ptr)
     archive.ptr = C_NULL
     nothing
 end
 
 Base.close(archive::Writer) =
-    @_la_call(archive_write_close, (Ptr{Void},), archive)
+    @_la_call(archive_write_close, (Ptr{Cvoid},), archive)
 
-function Base.cconvert(::Type{Ptr{Void}}, archive::Writer)
+function Base.cconvert(::Type{Ptr{Cvoid}}, archive::Writer)
     archive.ptr == C_NULL && error("archive already freed")
     archive
 end
-Base.unsafe_convert(::Type{Ptr{Void}}, archive::Writer) = archive.ptr
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, archive::Writer) = archive.ptr
 
 function ensure_open(archive::Writer)
     archive.opened && return
@@ -81,92 +70,92 @@ function ensure_open(archive::Writer)
 end
 
 set_bytes_per_block(archive::Writer, bytes_per_block) =
-    @_la_call(archive_write_set_bytes_per_block, (Ptr{Void}, Cint),
+    @_la_call(archive_write_set_bytes_per_block, (Ptr{Cvoid}, Cint),
               archive, bytes_per_block)
 get_bytes_per_block(archive::Writer) =
     ccall((:archive_write_get_bytes_per_block, libarchive),
-          Cint, (Ptr{Void},), archive)
+          Cint, (Ptr{Cvoid},), archive)
 
 set_bytes_in_last_block(archive::Writer, bytes_in_last_block) =
-    @_la_call(archive_write_set_bytes_in_last_block, (Ptr{Void}, Cint),
+    @_la_call(archive_write_set_bytes_in_last_block, (Ptr{Cvoid}, Cint),
               archive, bytes_in_last_block)
 get_bytes_in_last_block(archive::Writer) =
     ccall((:archive_write_get_bytes_in_last_block, libarchive),
-          Cint, (Ptr{Void},), archive)
+          Cint, (Ptr{Cvoid},), archive)
 
 """
 The dev/ino of a file that won't be archived. This is used
 to avoid recursively adding an archive to itself.
 """
 set_skip_file(archive::Writer, dev, ino) =
-    @_la_call(archive_write_set_skip_file, (Ptr{Void}, Int64, Int64),
+    @_la_call(archive_write_set_skip_file, (Ptr{Cvoid}, Int64, Int64),
               archive, dev, ino)
 
 ###
 # Open filename
 
-immutable WriteFileName{T} <: WriterData
+struct WriteFileName{T} <: WriterData
     name::T
 end
 
 Writer(fname::AbstractString) = Writer(WriteFileName(fname))
 Writer() = Writer(WriteFileName(nothing))
 
-function do_open{T}(archive::Writer{WriteFileName{T}})
+function do_open(archive::Writer{WriteFileName{T}}) where T
     data = archive.data
-    @_la_call(archive_write_open_filename, (Ptr{Void}, Cstring),
+    @_la_call(archive_write_open_filename, (Ptr{Cvoid}, Cstring),
               archive, data.name)
 end
 
-function do_open(archive::Writer{WriteFileName{Void}})
-    @_la_call(archive_write_open_filename, (Ptr{Void}, Ptr{Void}),
+function do_open(archive::Writer{WriteFileName{Cvoid}})
+    @_la_call(archive_write_open_filename, (Ptr{Cvoid}, Ptr{Cvoid}),
               archive, C_NULL)
 end
 
-immutable WriteFD <: WriterData
+struct WriteFD <: WriterData
     fd::Cint
 end
 
-Writer{T<:Integer}(fd::T) = Writer(WriteFD(Cint(fd)))
+Writer(fd::T) where {T<:Integer} = Writer(WriteFD(Cint(fd)))
 
 function do_open(archive::Writer{WriteFD})
     data = archive.data
-    @_la_call(archive_write_open_fd, (Ptr{Void}, Cint), archive, data.fd)
+    @_la_call(archive_write_open_fd, (Ptr{Cvoid}, Cint), archive, data.fd)
 end
 
 ###
 # Open memory
 
-immutable WriteMemory{T,TO} <: WriterData
+struct WriteMemory{T,TO} <: WriterData
     ptr::T
     obj::TO # Reference for GC
     size::Csize_t
     used::typeof(Ref{Csize_t}())
 end
 
-Writer{T<:Ptr,TO}(ptr::T, size, obj::TO=nothing) =
+Writer(ptr::T, size, obj::TO=nothing) where {T<:Ptr,TO} =
     Writer(WriteMemory{T,TO}(ptr, obj, size, Ref(Csize_t(0))))
 Writer(ary::Vector, size=sizeof(ary)) = Writer(pointer(ary), size, ary)
 
-Base.unsafe_convert(::Type{Ptr{Void}}, mem_data::WriteMemory) = mem_data.ptr
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, mem_data::WriteMemory) = mem_data.ptr
 
-function do_open{T<:WriteMemory}(archive::Writer{T})
+function do_open(archive::Writer{T}) where {T<:WriteMemory}
     data = archive.data
     @_la_call(archive_write_open_memory,
-              (Ptr{Void}, Ptr{Void}, Csize_t, Ptr{Csize_t}),
+              (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t, Ptr{Csize_t}),
               archive, data, data.size, data.used)
 end
 
-get_used{T<:WriteMemory}(archive::Writer{T}) = archive.data.used[]
+get_used(archive::Writer{T}) where {T<:WriteMemory} = archive.data.used[]
 
 ###
 # Generic writer
 
-immutable GenericWriteData{T} <: WriterData
+struct GenericWriteData{T} <: WriterData
     data::T
 end
 
-Writer{T}(data::T) = Writer(GenericWriteData{T}(data))
+Writer(data::T) where {T} = Writer(GenericWriteData{T}(data))
 
 writer_open(archive::Writer, data) = nothing
 function writer_writebytes end
@@ -182,7 +171,7 @@ function writer_open_callback(c_archive, archive)
     end
 end
 
-function writer_write_callback(c_archive, archive, buff::Ptr{Void},
+function writer_write_callback(c_archive, archive, buff::Ptr{Cvoid},
                                length::Csize_t)
     try
         clear_error(archive)
@@ -206,24 +195,24 @@ end
 
 writer_writebytes(archive, io::IO, ary) = write(io, ary)
 
-function do_open{T<:GenericWriteData}(archive::Writer{T})
+function do_open(archive::Writer{T}) where {T<:GenericWriteData}
     @_la_call(archive_write_open,
-              (Ptr{Void}, Any, Ptr{Void}, Ptr{Void}, Ptr{Void}),
+              (Ptr{Cvoid}, Any, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
               archive, archive,
-              to_open_callback(writer_open_callback, Writer{T}),
-              to_write_callback(writer_write_callback, Writer{T}),
-              to_close_callback(writer_close_callback, Writer{T}))
+              @to_open_callback(writer_open_callback, Writer{T}),
+              @to_write_callback(writer_write_callback, Writer{T}),
+              @to_close_callback(writer_close_callback, Writer{T}))
 end
 
 function write_header(archive::Writer, entry::Entry)
     ensure_open(archive)
-    @_la_call(archive_write_header, (Ptr{Void}, Ptr{Void}), archive, entry)
+    @_la_call(archive_write_header, (Ptr{Cvoid}, Ptr{Cvoid}), archive, entry)
 end
 
 @inline function unsafe_archive_write(archive::Writer, buf, len)
     ensure_open(archive)
     nb = ccall((:archive_write_data, libarchive),
-               Cssize_t, (Ptr{Void}, Ptr{Void}, Csize_t), archive, buf, len)
+               Cssize_t, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t), archive, buf, len)
     nb < 0 && _la_error(Cint(nb), archive)
     nb % Csize_t
 end
@@ -233,14 +222,9 @@ unsafe_write(archive::Writer, buf::Ptr{UInt8}, len::UInt) =
 Base.write(archive::Writer, c::UInt8) =
     unsafe_archive_write(archive, Ref(c), 1)
 
-if !isdefined(Base, :unsafe_write)
-    Base.write(archive::Writer, data::Array) =
-        unsafe_archive_write(archive, data, sizeof(data))
-end
-
 function finish_entry(archive::Writer)
     ensure_open(archive)
-    @_la_call(archive_write_finish_entry, (Ptr{Void},), archive)
+    @_la_call(archive_write_finish_entry, (Ptr{Cvoid},), archive)
 end
 
 """
@@ -249,19 +233,11 @@ won't try to close() cleanly.  Provides a fast abort capability
 when the client discovers that things have gone wrong.
 """
 write_fail(archive::Writer) =
-    @_la_call(archive_write_fail, (Ptr{Void},), archive)
+    @_la_call(archive_write_fail, (Ptr{Cvoid},), archive)
 
 Writer(f::Function) = archive_guard(f, Writer())
 Writer(f::Function, args...; kws...) =
     archive_guard(f, Writer(args...; kws...))
-
-@deprecate file_writer(fname::AbstractString) Writer(fname)
-@deprecate file_writer() Writer()
-@deprecate file_writer{T<:Integer}(fd::T) Writer(fd)
-@deprecate mem_writer(data::Vector) Writer(data)
-@deprecate mem_writer(obj) Writer(pointer(obj), sizeof(obj), obj)
-@deprecate gen_writer(data) Writer(data)
-@deprecate write_data(archive::Writer, data) write(archive, data)
 
 # /*
 #  * Set write options.

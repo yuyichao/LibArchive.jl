@@ -1,15 +1,14 @@
 #
 
 using LibArchive
-using Base.Test
+using Test
 import Base.Filesystem
-using Compat
 
 ## Version
-info("Testing libarchive $(LibArchive.version()::VersionNumber)")
+@info("Testing libarchive $(LibArchive.version()::VersionNumber)")
 
 ## Error
-info("Test error translation")
+@info("Test error translation")
 @test_throws EOFError LibArchive._la_error(LibArchive.Status.EOF)
 @test_throws ArchiveRetry LibArchive._la_error(LibArchive.Status.RETRY)
 @test_throws ArchiveFailed LibArchive._la_error(LibArchive.Status.FAILED)
@@ -17,7 +16,7 @@ info("Test error translation")
 @test_throws ErrorException LibArchive._la_error(Cint(-1024))
 
 ## Reader error
-info("Test reader error handling")
+@info("Test reader error handling")
 let
     reader = LibArchive.Reader()
     @test reader.ptr != C_NULL
@@ -71,7 +70,7 @@ LibArchive.Reader("/this_file_does_not_exist") do reader
 end
 
 # Writer error
-info("Test writer error handling")
+@info("Test writer error handling")
 let
     writer = LibArchive.Writer()
     @test writer.ptr != C_NULL
@@ -91,15 +90,15 @@ LibArchive.Writer("/this_dir_does_not_exist/file") do writer
     @test !isempty(ex.msg)
 end
 
-info("Test do block result and exception pass through")
+@info("Test do block result and exception pass through")
 
 @test_throws BoundsError LibArchive.Writer(_->throw(BoundsError([], 10)))
 @test_throws ArgumentError LibArchive.Reader(_->throw(ArgumentError("a")))
 @test LibArchive.Writer(_->10) === 10
 @test LibArchive.Reader(_->0.1) === 0.1
 
-info("Test availability of filters and formats")
-info("    Reader")
+@info("Test availability of filters and formats")
+@info("    Reader")
 LibArchive.Reader() do reader
     LibArchive.support_filter_all(reader)
 end
@@ -148,7 +147,7 @@ if LibArchive.version() >= v"3.1.0"
     end
 end
 
-info("    Writer")
+@info("    Writer")
 if LibArchive.version() >= v"3.1.0"
     LibArchive.Writer() do writer
         LibArchive.add_filter(writer, LibArchive.FilterType.COMPRESS)
@@ -168,7 +167,7 @@ LibArchive.Writer() do writer
     LibArchive.add_filter_compress(writer)
     LibArchive.add_filter_gzip(writer)
     LibArchive.add_filter_none(writer)
-    if !Compat.Sys.isapple()
+    if !Sys.isapple()
         LibArchive.add_filter_lzip(writer)
         LibArchive.add_filter_lzma(writer)
         LibArchive.add_filter_xz(writer)
@@ -205,7 +204,7 @@ LibArchive.Writer() do writer
 end
 
 # Copy entry
-info("Test deepcopy of Entry")
+@info("Test deepcopy of Entry")
 let
     entry = LibArchive.Entry()
     @test !LibArchive.size_is_set(entry)
@@ -233,7 +232,7 @@ let
 end
 
 # Entry properties
-info("Test Entry properties")
+@info("Test Entry properties")
 let
     # Time stamps
     entry = LibArchive.Entry()
@@ -327,7 +326,7 @@ let
     LibArchive.free(entry)
 end
 
-Compat.Sys.isunix() && let
+Sys.isunix() && let
     # fflags
     entry = LibArchive.Entry()
     @test_throws ArgumentError LibArchive.fflags_text(entry)
@@ -363,14 +362,14 @@ let
 
     LibArchive.set_gname(entry, "group_name1")
     @test LibArchive.gname(entry) == "group_name1"
-    if Compat.Sys.isunix()
+    if Sys.isunix()
         LibArchive.set_gname(entry, "Group αβ")
         @test LibArchive.gname(entry) == "Group αβ"
     end
 
     LibArchive.set_uname(entry, "user_name1")
     @test LibArchive.uname(entry) == "user_name1"
-    if Compat.Sys.isunix()
+    if Sys.isunix()
         LibArchive.set_uname(entry, "User γδ")
         @test LibArchive.uname(entry) == "User γδ"
     end
@@ -389,7 +388,7 @@ let
     @test_throws ArgumentError LibArchive.hardlink(entry)
     LibArchive.set_hardlink(entry, "hard_link1")
     @test LibArchive.hardlink(entry) == "hard_link1"
-    if Compat.Sys.isunix()
+    if Sys.isunix()
         LibArchive.set_hardlink(entry, "Hard Link α")
         @test LibArchive.hardlink(entry) == "Hard Link α"
     end
@@ -399,7 +398,7 @@ let
     @test_throws ArgumentError LibArchive.pathname(entry)
     LibArchive.set_pathname(entry, "path_name2")
     @test LibArchive.pathname(entry) == "path_name2"
-    if Compat.Sys.isunix()
+    if Sys.isunix()
         LibArchive.set_pathname(entry, "Path Name β")
         @test LibArchive.pathname(entry) == "Path Name β"
     end
@@ -409,7 +408,7 @@ let
     @test_throws ArgumentError LibArchive.sourcepath(entry)
     LibArchive.set_sourcepath(entry, "source_path3")
     @test LibArchive.sourcepath(entry) == "source_path3"
-    if Compat.Sys.isunix()
+    if Sys.isunix()
         LibArchive.set_sourcepath(entry, "Source Path γ")
         @test LibArchive.sourcepath(entry) == "Source Path γ"
     end
@@ -419,7 +418,7 @@ let
     @test_throws ArgumentError LibArchive.symlink(entry)
     LibArchive.set_symlink(entry, "sym_link4")
     @test LibArchive.symlink(entry) == "sym_link4"
-    if Compat.Sys.isunix()
+    if Sys.isunix()
         LibArchive.set_symlink(entry, "Sym Link δ")
         @test LibArchive.symlink(entry) == "Sym Link δ"
     end
@@ -482,7 +481,7 @@ let
 end
 
 # Create archive
-info("Test creating and reading archive")
+@info("Test creating and reading archive")
 function create_archive(writer)
     entry = LibArchive.Entry(writer)
     LibArchive.set_pathname(entry, "test.txt")
@@ -525,7 +524,7 @@ function verify_archive(reader)
     @test LibArchive.file_count(reader) == 2
 end
 
-info("    Filename")
+@info("    Filename")
 mktempdir() do d
     cd(d) do
         LibArchive.Writer("./test.tar.bz2") do writer
@@ -553,9 +552,9 @@ mktempdir() do d
     end
 end
 
-Compat.Sys.isunix() && mktempdir() do d
+Sys.isunix() && mktempdir() do d
     cd(d) do
-        info("    FD")
+        @info("    FD")
         fd = ccall(:open, Cint, (Cstring, Cint, Cint),
                    "./test.tar.gz",
                    Filesystem.JL_O_WRONLY | Filesystem.JL_O_CREAT,
@@ -578,9 +577,9 @@ Compat.Sys.isunix() && mktempdir() do d
     end
 end
 
-info("    In memory")
+@info("    In memory")
 let
-    buffer = Vector{UInt8}(4096)
+    buffer = Vector{UInt8}(undef, 4096)
     used_size = LibArchive.Writer(buffer) do writer
         LibArchive.set_format_gnutar(writer)
         LibArchive.add_filter_bzip2(writer)
@@ -597,7 +596,7 @@ let
     end
 end
 
-info("    In memory (C pointer)")
+@info("    In memory (C pointer)")
 let
     buffer = Libc.malloc(4096)
     used_size = LibArchive.Writer(buffer, 4096) do writer
@@ -617,7 +616,7 @@ let
     Libc.free(buffer)
 end
 
-info("    IO Stream")
+@info("    IO Stream")
 let
     io = IOBuffer()
     LibArchive.Writer(io) do writer

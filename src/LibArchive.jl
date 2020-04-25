@@ -4,14 +4,10 @@ __precompile__()
 
 module LibArchive
 
-using Compat
+import Base: unsafe_read, unsafe_write
 
-if isdefined(Base, :unsafe_read)
-    # I forgot to add `unsafe_read` to `Compat` ;-P
-    import Base: unsafe_read, unsafe_write
-else
-    const unsafe_read = read
-    const unsafe_write = write
+@inline function finalizer(obj, func)
+    Base.finalizer(func, obj)
 end
 
 export ArchiveRetry, ArchiveFailed, ArchiveFatal
@@ -38,7 +34,7 @@ function version()
     VersionNumber(major, minor, patch)
 end
 
-@compat abstract type Archive <: IO end
+abstract type Archive <: IO end
 
 function archive_guard(func::Function, archive::Archive)
     try

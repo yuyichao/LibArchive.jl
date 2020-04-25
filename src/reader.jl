@@ -21,59 +21,43 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
-@compat abstract type ReaderData end
+abstract type ReaderData end
 
-type Reader{T<:ReaderData} <: Archive
+mutable struct Reader{T<:ReaderData} <: Archive
     data::T
-    ptr::Ptr{Void}
+    ptr::Ptr{Cvoid}
     opened::Bool
-    @static if isdefined(Base, :UnionAll)
-        function Reader{T}(data::T) where
-            T
-            ptr = ccall((:archive_read_new, libarchive), Ptr{Void}, ())
-            ptr == C_NULL && throw(OutOfMemoryError())
-            return Reader{T}(data, ptr, false)
-        end
-        # For pre-openned archive. (e.g. from LibALPM)
-        function Reader{T}(data::T, ptr::Ptr{Void}, opened::Bool) where
-            T
-            obj = new(data, ptr, opened)
-            finalizer(obj, free)
-            obj
-        end
-    else
-        function Reader(data::T)
-            ptr = ccall((:archive_read_new, libarchive), Ptr{Void}, ())
-            ptr == C_NULL && throw(OutOfMemoryError())
-            return Reader{T}(data, ptr, false)
-        end
-        # For pre-openned archive. (e.g. from LibALPM)
-        function Reader(data::T, ptr::Ptr{Void}, opened::Bool)
-            obj = new(data, ptr, opened)
-            finalizer(obj, free)
-            obj
-        end
+    function Reader{T}(data::T) where T
+        ptr = ccall((:archive_read_new, libarchive), Ptr{Cvoid}, ())
+        ptr == C_NULL && throw(OutOfMemoryError())
+        return Reader{T}(data, ptr, false)
+    end
+    # For pre-openned archive. (e.g. from LibALPM)
+    function Reader{T}(data::T, ptr::Ptr{Cvoid}, opened::Bool) where T
+        obj = new(data, ptr, opened)
+        finalizer(obj, free)
+        obj
     end
 end
 
-Reader{T<:ReaderData}(data::T) = Reader{T}(data)
+Reader(data::T) where {T<:ReaderData} = Reader{T}(data)
 
 function free(archive::Reader)
     ptr = archive.ptr
     ptr == C_NULL && return
-    ccall((:archive_read_free, libarchive), Cint, (Ptr{Void},), ptr)
+    ccall((:archive_read_free, libarchive), Cint, (Ptr{Cvoid},), ptr)
     archive.ptr = C_NULL
     nothing
 end
 
 Base.close(archive::Reader) =
-    @_la_call(archive_read_close, (Ptr{Void},), archive)
+    @_la_call(archive_read_close, (Ptr{Cvoid},), archive)
 
-function Base.cconvert(::Type{Ptr{Void}}, archive::Reader)
+function Base.cconvert(::Type{Ptr{Cvoid}}, archive::Reader)
     archive.ptr == C_NULL && error("archive already freed")
     archive
 end
-Base.unsafe_convert(::Type{Ptr{Void}}, archive::Reader) = archive.ptr
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, archive::Reader) = archive.ptr
 
 function ensure_open(archive::Reader)
     archive.opened && return
@@ -90,7 +74,7 @@ end
 ###
 # Open filename
 
-immutable ReadFileName{T} <: ReaderData
+struct ReadFileName{T} <: ReaderData
     name::T
     block_size::Int
 end
@@ -100,19 +84,19 @@ Reader(fname::AbstractString; block_size=10240) =
 Reader(; block_size=10240) =
     Reader(ReadFileName(nothing, Int(block_size)::Int))
 
-function do_open{T}(archive::Reader{ReadFileName{T}})
+function do_open(archive::Reader{ReadFileName{T}}) where T
     data = archive.data
-    @_la_call(archive_read_open_filename, (Ptr{Void}, Cstring, Csize_t),
+    @_la_call(archive_read_open_filename, (Ptr{Cvoid}, Cstring, Csize_t),
               archive, data.name, data.block_size)
 end
 
-function do_open(archive::Reader{ReadFileName{Void}})
+function do_open(archive::Reader{ReadFileName{Cvoid}})
     data = archive.data
-    @_la_call(archive_read_open_filename, (Ptr{Void}, Ptr{Void}, Csize_t),
+    @_la_call(archive_read_open_filename, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t),
               archive, C_NULL, data.block_size)
 end
 
-immutable ReadFD <: ReaderData
+struct ReadFD <: ReaderData
     fd::Cint
     block_size::Int
 end
@@ -122,7 +106,7 @@ Reader(fd::Integer; block_size=10240) =
 
 function do_open(archive::Reader{ReadFD})
     data = archive.data
-    @_la_call(archive_read_open_fd, (Ptr{Void}, Cint, Csize_t),
+    @_la_call(archive_read_open_fd, (Ptr{Cvoid}, Cint, Csize_t),
               archive, data.fd, data.block_size)
 end
 
@@ -136,34 +120,34 @@ end
 ###
 # Open memory
 
-immutable ReadMemory{T,TO} <: ReaderData
+struct ReadMemory{T,TO} <: ReaderData
     ptr::T
     obj::TO # Reference for GC
     size::Int
 end
 
-Reader{T<:Ptr,TO}(ptr::T, size, obj::TO=nothing) =
+Reader(ptr::T, size, obj::TO=nothing) where {T<:Ptr,TO} =
     Reader(ReadMemory{T,TO}(ptr, obj, size))
 Reader(ary::Vector, size=sizeof(ary)) = Reader(pointer(ary), size, ary)
 
-Base.unsafe_convert(::Type{Ptr{Void}}, mem_data::ReadMemory) = mem_data.ptr
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, mem_data::ReadMemory) = mem_data.ptr
 
-function do_open{T<:ReadMemory}(archive::Reader{T})
+function do_open(archive::Reader{T}) where {T<:ReadMemory}
     data = archive.data
-    @_la_call(archive_read_open_memory, (Ptr{Void}, Ptr{Void}, Csize_t),
+    @_la_call(archive_read_open_memory, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t),
               archive, data, data.size)
 end
 
 ###
 # Generic reader
 
-immutable GenericReadData{T} <: ReaderData
+struct GenericReadData{T} <: ReaderData
     data::T
     buff::Vector{UInt8}
 end
 
-Reader{T}(data::T, buff_size=10240) =
-    Reader(GenericReadData{T}(data, Vector{UInt8}(buff_size)))
+Reader(data::T, buff_size=10240) where {T} =
+    Reader(GenericReadData{T}(data, Vector{UInt8}(undef, buff_size)))
 
 reader_open(archive::Reader, data) = nothing
 function reader_readbytes end
@@ -181,7 +165,7 @@ function reader_open_callback(c_archive, archive)
     end
 end
 
-function reader_read_callback(c_archive, archive, buff::Ptr{Ptr{Void}})
+function reader_read_callback(c_archive, archive, buff::Ptr{Ptr{Cvoid}})
     try
         clear_error(archive)
         bytes_read = reader_readbytes(archive, archive.data.data,
@@ -228,32 +212,32 @@ reader_readbytes(archive, io::IO, buff) = readbytes!(io, buff)
 reader_skip(archive, io::IO, sz) =
     (skip(io, sz); sz)
 
-function do_open{T<:GenericReadData}(archive::Reader{T})
+function do_open(archive::Reader{T}) where {T<:GenericReadData}
     # Set various callbacks
     @_la_call(archive_read_set_callback_data,
-              (Ptr{Void}, Any), archive, archive)
+              (Ptr{Cvoid}, Any), archive, archive)
     @_la_call(archive_read_set_open_callback,
-              (Ptr{Void}, Ptr{Void}), archive,
-              to_open_callback(reader_open_callback, Reader{T}))
+              (Ptr{Cvoid}, Ptr{Cvoid}), archive,
+              @to_open_callback(reader_open_callback, Reader{T}))
     @_la_call(archive_read_set_read_callback,
-              (Ptr{Void}, Ptr{Void}), archive,
-              to_read_callback(reader_read_callback, Reader{T}))
+              (Ptr{Cvoid}, Ptr{Cvoid}), archive,
+              @to_read_callback(reader_read_callback, Reader{T}))
     @_la_call(archive_read_set_seek_callback,
-              (Ptr{Void}, Ptr{Void}), archive,
-              to_seek_callback(reader_seek_callback, Reader{T}))
+              (Ptr{Cvoid}, Ptr{Cvoid}), archive,
+              @to_seek_callback(reader_seek_callback, Reader{T}))
     @_la_call(archive_read_set_skip_callback,
-              (Ptr{Void}, Ptr{Void}), archive,
-              to_skip_callback(reader_skip_callback, Reader{T}))
+              (Ptr{Cvoid}, Ptr{Cvoid}), archive,
+              @to_skip_callback(reader_skip_callback, Reader{T}))
     @_la_call(archive_read_set_close_callback,
-              (Ptr{Void}, Ptr{Void}), archive,
-              to_close_callback(reader_close_callback, Reader{T}))
-    @_la_call(archive_read_open1, (Ptr{Void},), archive)
+              (Ptr{Cvoid}, Ptr{Cvoid}), archive,
+              @to_close_callback(reader_close_callback, Reader{T}))
+    @_la_call(archive_read_open1, (Ptr{Cvoid},), archive)
 end
 
 function next_header(archive::Reader)
     ensure_open(archive)
     entry = Entry(archive)
-    @_la_call(archive_read_next_header2, (Ptr{Void}, Ptr{Void}),
+    @_la_call(archive_read_next_header2, (Ptr{Cvoid}, Ptr{Cvoid}),
               archive, entry)
     entry
 end
@@ -264,12 +248,12 @@ header started.
 """
 header_position(archive::Reader) =
     ccall((:archive_read_header_position, libarchive),
-          Int64, (Ptr{Void},), archive)
+          Int64, (Ptr{Cvoid},), archive)
 
 "Read data from the body of an entry.  Similar to read(2)."
 @inline function unsafe_archive_read(archive::Reader, ptr::Ptr{UInt8}, sz::UInt)
     nb = ccall((:archive_read_data, libarchive), Cssize_t,
-               (Ptr{Void}, Ptr{Void}, Csize_t), archive, ptr, sz)
+               (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t), archive, ptr, sz)
     nb < 0 && _la_error(Cint(nb), archive)
     nb % Csize_t
 end
@@ -299,7 +283,7 @@ end
 function Base.read(archive::Reader)
     # Maybe we can optimize this with block read?
     block_size = UInt(1024)
-    res = Vector{UInt8}(block_size)
+    res = Vector{UInt8}(undef, block_size)
     pos = 1
     while true
         ptr = Base.unsafe_convert(Ptr{UInt8}, Ref(res, pos))
@@ -319,28 +303,19 @@ end
 "Seek within the body of an entry.  Similar to lseek(2)."
 Base.seek(archive::Reader, offset, what) =
     ccall((:archive_seek_data, libarchive), Int64,
-          (Ptr{Void}, Int64, Cint), archive, offset, what)
+          (Ptr{Cvoid}, Int64, Cint), archive, offset, what)
 
 "Skips entire entry"
 Base.skip(archive::Reader) =
-    @_la_call(archive_read_data_skip, (Ptr{Void},), archive)
+    @_la_call(archive_read_data_skip, (Ptr{Cvoid},), archive)
 
 "Writes data to specified filedes"
 read_into_fd(archive::Reader, fd::Integer) =
-    @_la_call(archive_read_data_into_fd, (Ptr{Void}, Cint), archive, fd)
+    @_la_call(archive_read_data_into_fd, (Ptr{Cvoid}, Cint), archive, fd)
 
 Reader(f::Function) = archive_guard(f, Reader())
 Reader(f::Function, args...; kws...) =
     archive_guard(f, Reader(args...; kws...))
-
-@deprecate file_reader(block_size=10240) Reader(block_size=block_size)
-@deprecate file_reader(fname::AbstractString,
-                       block_size=10240) Reader(fname, block_size=block_size)
-@deprecate file_reader(fd::Integer,
-                       block_size=10240) Reader(fd, block_size=block_size)
-@deprecate mem_reader{T<:Vector}(data::T, size=sizeof(data)) Reader(data, size)
-@deprecate mem_reader(obj, size=sizeof(obj)) Reader(pointer(obj), size, obj)
-@deprecate gen_reader(data, buff_size=10240) Reader(data, buff_size)
 
 # /*
 #  * Set read options.

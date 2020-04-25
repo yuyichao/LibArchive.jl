@@ -1,13 +1,13 @@
 ###
 # Error
 
-immutable ArchiveRetry <: Exception
+struct ArchiveRetry <: Exception
     msg
 end
-immutable ArchiveFailed <: Exception
+struct ArchiveFailed <: Exception
     msg
 end
-immutable ArchiveFatal <: Exception
+struct ArchiveFatal <: Exception
     msg
 end
 
@@ -18,7 +18,7 @@ _la_error_msg(other) = ""
     err == Status.EOF && throw(EOFError())
     err == Status.RETRY && throw(ArchiveRetry(_la_error_msg(obj)))
     if err == Status.WARN
-        warn("LibArchive: $(_la_error_msg(obj))")
+        @warn("LibArchive: $(_la_error_msg(obj))")
         return
     end
     err == Status.FAILED && throw(ArchiveFailed(_la_error_msg(obj)))

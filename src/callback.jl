@@ -7,8 +7,9 @@
 
 Returns pointer and size of next block of data from archive.
 """
-to_read_callback{T}(func::Function, ::Type{T}) =
-    cfunction(func, Cssize_t, Tuple{Ptr{Void},Ref{T},Ptr{Ptr{Void}}})
+macro to_read_callback(f, T)
+    :(@cfunction($f, Cssize_t, (Ptr{Cvoid}, Ref{$(esc(T))}, Ptr{Ptr{Cvoid}})))
+end
 
 """
     int64_t archive_skip_callback(struct archive*,
@@ -19,8 +20,9 @@ This may skip fewer bytes than requested; it may even skip zero bytes.
 If you do skip fewer bytes than requested, libarchive will invoke your
 read callback and discard data as necessary to make up the full skip.
 """
-to_skip_callback{T}(func::Function, ::Type{T}) =
-    cfunction(func, Int64, Tuple{Ptr{Void},Ref{T},Int64})
+macro to_skip_callback(f, T)
+    :(@cfunction($f, Int64, (Ptr{Cvoid}, Ref{$(esc(T))}, Int64)))
+end
 
 """
     int64_t archive_seek_callback(struct archive*,
@@ -30,8 +32,9 @@ Seeks to specified location in the file and returns the position.
 Whence values are SEEK_SET, SEEK_CUR, SEEK_END from stdio.h.
 Return ARCHIVE_FATAL if the seek fails for any reason.
 """
-to_seek_callback{T}(func::Function, ::Type{T}) =
-    cfunction(func, Int64, Tuple{Ptr{Void},Ref{T},Int64,Cint})
+macro to_seek_callback(f, T)
+    :(@cfunction($f, Int64, (Ptr{Cvoid}, Ref{$(esc(T))}, Int64, Cint)))
+end
 
 """
     ssize_t archive_write_callback(struct archive*,
@@ -40,20 +43,23 @@ to_seek_callback{T}(func::Function, ::Type{T}) =
 
 Returns size actually written, zero on EOF, -1 on error.
 """
-to_write_callback{T}(func::Function, ::Type{T}) =
-    cfunction(func, Cssize_t, Tuple{Ptr{Void},Ref{T},Ptr{Void},Csize_t})
+macro to_write_callback(f, T)
+    :(@cfunction($f, Cssize_t, (Ptr{Cvoid}, Ref{$(esc(T))}, Ptr{Cvoid}, Csize_t)))
+end
 
 """
     int archive_open_callback(struct archive*, void *client_data)
 """
-to_open_callback{T}(func::Function, ::Type{T}) =
-    cfunction(func, Cint, Tuple{Ptr{Void},Ref{T}})
+macro to_open_callback(f, T)
+    :(@cfunction($f, Cint, (Ptr{Cvoid}, Ref{$(esc(T))})))
+end
 
 """
     int archive_close_callback(struct archive*, void *client_data)
 """
-to_close_callback{T}(func::Function, ::Type{T}) =
-    cfunction(func, Cint, Tuple{Ptr{Void},Ref{T}})
+macro to_close_callback(f, T)
+    :(@cfunction($f, Cint, (Ptr{Cvoid}, Ref{$(esc(T))})))
+end
 
 # """
 #     int archive_switch_callback(struct archive*, void *client_data1,
@@ -63,5 +69,5 @@ to_close_callback{T}(func::Function, ::Type{T}) =
 # This is useful for reading from different data blocks such as a set of files
 # that make up one large file.
 # """
-# to_switch_callback{T1,T2}(func::Function, ::Type{T1}=Void, ::Type{T2}=Void) =
-#     cfunction(func, Cint, Tuple{Ptr{Void},Ptr{T1},Ptr{T2}})
+# to_switch_callback{T1,T2}(func::Function, ::Type{T1}=Cvoid, ::Type{T2}=Cvoid) =
+#     @cfunction($f, Cint, Tuple{Ptr{Cvoid},Ptr{T1},Ptr{T2}})
