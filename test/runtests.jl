@@ -116,6 +116,7 @@ LibArchive.Reader() do reader
     LibArchive.support_filter_rpm(reader)
     LibArchive.support_filter_uu(reader)
     LibArchive.support_filter_xz(reader)
+    LibArchive.support_filter_zstd(reader)
 end
 
 LibArchive.Reader() do reader
@@ -171,6 +172,7 @@ LibArchive.Writer() do writer
         LibArchive.add_filter_lzip(writer)
         LibArchive.add_filter_lzma(writer)
         LibArchive.add_filter_xz(writer)
+        LibArchive.add_filter_zstd(writer)
     end
 end
 
