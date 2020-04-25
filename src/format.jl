@@ -42,6 +42,8 @@ support_filter_uu(archive::Reader) =
     @_la_call(archive_read_support_filter_uu, (Ptr{Cvoid},), archive)
 support_filter_xz(archive::Reader) =
     @_la_call(archive_read_support_filter_xz, (Ptr{Cvoid},), archive)
+support_filter_zstd(archive::Reader) =
+    @_la_call(archive_read_support_filter_zstd, (Ptr{Cvoid},), archive)
 
 support_format_7zip(archive::Reader) =
     @_la_call(archive_read_support_format_7zip, (Ptr{Cvoid},), archive)
@@ -128,6 +130,8 @@ add_filter_uuencode(archive::Writer) =
     @_la_call(archive_write_add_filter_uuencode, (Ptr{Cvoid},), archive)
 add_filter_xz(archive::Writer) =
     @_la_call(archive_write_add_filter_xz, (Ptr{Cvoid},), archive)
+add_filter_zstd(archive::Writer) =
+    @_la_call(archive_write_add_filter_zstd, (Ptr{Cvoid},), archive)
 
 "A convenience function to set the format based on the code or name."
 set_format(archive::Writer, format_code::Integer) =
