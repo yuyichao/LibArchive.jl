@@ -125,6 +125,8 @@ add_filter_gzip(archive::Writer) =
     @_la_call(archive_write_add_filter_gzip, (Ptr{Cvoid},), archive)
 add_filter_lrzip(archive::Writer) =
     @_la_call(archive_write_add_filter_lrzip, (Ptr{Cvoid},), archive)
+add_filter_lz4(archive::Writer) =
+    @_la_call(archive_write_add_filter_lz4, (Ptr{Cvoid},), archive)
 add_filter_lzip(archive::Writer) =
     @_la_call(archive_write_add_filter_lzip, (Ptr{Cvoid},), archive)
 add_filter_lzma(archive::Writer) =
@@ -172,6 +174,8 @@ set_format_pax(archive::Writer) =
     @_la_call(archive_write_set_format_pax, (Ptr{Cvoid},), archive)
 set_format_pax_restricted(archive::Writer) =
     @_la_call(archive_write_set_format_pax_restricted, (Ptr{Cvoid},), archive)
+set_format_raw(archive::Writer) =
+    @_la_call(archive_write_set_format_raw, (Ptr{Cvoid},), archive)
 set_format_shar(archive::Writer) =
     @_la_call(archive_write_set_format_shar, (Ptr{Cvoid},), archive)
 set_format_shar_dump(archive::Writer) =
@@ -180,6 +184,8 @@ set_format_ustar(archive::Writer) =
     @_la_call(archive_write_set_format_ustar, (Ptr{Cvoid},), archive)
 set_format_v7tar(archive::Writer) =
     @_la_call(archive_write_set_format_v7tar, (Ptr{Cvoid},), archive)
+set_format_warc(archive::Writer) =
+    @_la_call(archive_write_set_format_warc, (Ptr{Cvoid},), archive)
 set_format_xar(archive::Writer) =
     @_la_call(archive_write_set_format_xar, (Ptr{Cvoid},), archive)
 set_format_zip(archive::Writer) =
