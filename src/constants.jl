@@ -30,8 +30,24 @@ const LZIP = Cint(9)
 const LRZIP = Cint(10)
 const LZOP = Cint(11)
 const GRZIP = Cint(12)
+const LZ4 = Cint(14)
+const ZSTD = Cint(15)
 end
 
+# Codes returned by archive_format.
+#
+# Top 16 bits identifies the format family (e.g., "tar"); lower
+# 16 bits indicate the variant.  This is updated by read_next_header.
+# Note that the lower 16 bits will often vary from entry to entry.
+# In some cases, this variation occurs as libarchive learns more about
+# the archive (for example, later entries might utilize extensions that
+# weren't necessary earlier in the archive; in this case, libarchive
+# will change the format code to indicate the extended format that
+# was used).  In other cases, it's because different tools have
+# modified the archive and so different parts of the archive
+# actually have slightly different formats.  (Both tar and cpio store
+# format codes in each entry, so it is quite possible for each
+# entry to be in a different format.)
 module Format
 const BASE_MASK = Cint(0xff0000)
 const CPIO = Cint(0x10000)
@@ -63,6 +79,35 @@ const LHA = Cint(0xB0000)
 const CAB = Cint(0xC0000)
 const RAR = Cint(0xD0000)
 const _7ZIP = Cint(0xE0000)
+const WARC = Cint(0xF0000)
+const RAR_V5 = Cint(0x100000)
+end
+
+# Codes returned by format_capabilities(::Reader).
+#
+# This list can be extended with values between 0 and 0xffff.
+# The original purpose of this list was to let different archive
+# format readers expose their general capabilities in terms of
+# encryption.
+module ReadFormatCaps
+"no special capabilities"
+const NONE = Cint(0)
+"reader can detect encrypted data"
+const ENCRYPT_DATA = Cint(1 << 0)
+"reader can detect encryptable metadata (pathname, mtime, etc.)"
+const ENCRYPT_METADATA = Cint(1 << 1)
+end
+
+# Codes returned by archive_read_has_encrypted_entries().
+#
+# In case the archive does not support encryption detection at all
+# ARCHIVE_READ_FORMAT_ENCRYPTION_UNSUPPORTED is returned. If the reader
+# for some other reason (e.g. not enough bytes read) cannot say if
+# there are encrypted entries, ARCHIVE_READ_FORMAT_ENCRYPTION_DONT_KNOW
+# is returned.
+module ReadFormatEncryption
+const UNSUPPORTED = Cint(-2)
+const DONT_KNOW = Cint(-1)
 end
 
 module ExtractFlag
@@ -110,6 +155,12 @@ Default: Do not use HFS+ compression if it was not compressed.
 This has no effect except on Mac OS v10.6 or later.
 """
 const HFS_COMPRESSION_FORCED = Cint(0x8000)
+"Default: Do not reject entries with absolute paths"
+const SECURE_NOABSOLUTEPATHS = Cint(0x10000)
+"Default: Do not clear no-change flags when unlinking object"
+const CLEAR_NOCHANGE_FFLAGS = Cint(0x20000)
+"Default: Do not extract atomically (using rename)"
+const SAFE_WRITES = Cint(0x40000)
 end
 
 module ReadDiskFlag
@@ -127,6 +178,12 @@ using copyfile.
 const MAC_COPYFILE = Cint(0x0004)
 "Default: Do not traverse mount points."
 const NO_TRAVERSE_MOUNTS = Cint(0x0008)
+"Default: Xattrs are read from disk."
+const NO_XATTR = Cint(0x0010)
+"Default: ACLs are read from disk."
+const NO_ACL = Cint(0x0020)
+"Default: File flags are read from disk."
+const NO_FFLAGS = Cint(0x0040)
 end
 
 """
@@ -155,6 +212,13 @@ const CHR = Cint(0o020000)
 const BLK = Cint(0o060000)
 const DIR = Cint(0o040000)
 const IFO = Cint(0o010000)
+const FIFO = IFO
+end
+
+module SymlinkType
+const UNDEFINED = Cint(0)
+const FILE = Cint(1)
+const DIRECTORY = Cint(2)
 end
 
 module ACL
@@ -188,6 +252,7 @@ const PERMS_NFS4 = (EXECUTE | READ_DATA | LIST_DIRECTORY | WRITE_DATA |
                     WRITE_ACL | WRITE_OWNER | SYNCHRONIZE)
 
 # Inheritance values (NFS4 ACLs only); included in permset.
+const INHERITED = Cint(0x01000000)
 const FILE_INHERIT = Cint(0x02000000)
 const DIRECTORY_INHERIT = Cint(0x04000000)
 const NO_PROPAGATE_INHERIT = Cint(0x08000000)
@@ -195,18 +260,18 @@ const INHERIT_ONLY = Cint(0x10000000)
 const SUCCESSFUL_ACCESS = Cint(0x20000000)
 const FAILED_ACCESS = Cint(0x40000000)
 
-const INHERITANCE_NFS4 = (FILE_INHERIT | DIRECTORY_INHERIT |
+const INHERITANCE_NFS4 = (INHERITED | FILE_INHERIT | DIRECTORY_INHERIT |
                           NO_PROPAGATE_INHERIT | INHERIT_ONLY |
                           SUCCESSFUL_ACCESS | FAILED_ACCESS)
 
 module Type
 # We need to be able to specify combinations of these.
-const ACCESS = Cint(256)  # POSIX.1e only
-const DEFAULT = Cint(512) # POSIX.1e only
-const ALLOW = Cint(1024) # NFS4 only
-const DENY = Cint(2048) # NFS4 only
-const AUDIT = Cint(4096) # NFS4 only
-const ALARM = Cint(8192) # NFS4 only
+const ACCESS = Cint(0x00000100)  # POSIX.1e only
+const DEFAULT = Cint(0x00000200) # POSIX.1e only
+const ALLOW = Cint(0x00000400) # NFS4 only
+const DENY = Cint(0x00000800) # NFS4 only
+const AUDIT = Cint(0x00001000) # NFS4 only
+const ALARM = Cint(0x00002000) # NFS4 only
 const POSIX1E = (ACCESS | DEFAULT)
 const NFS4 = (ALLOW | DENY | AUDIT | ALARM)
 end
@@ -228,7 +293,10 @@ const OTHER = Cint(10006)
 const EVERYONE = Cint(10107)
 
 module Style
-const EXTRA_ID = Cint(1024)
-const MARK_DEFAULT = Cint(2048)
+const EXTRA_ID = Cint(0x00000001)
+const MARK_DEFAULT = Cint(0x00000002)
+const SOLARIS = Cint(0x00000004)
+const SEPARATOR_COMMA = Cint(0x00000008)
+const COMPACT = Cint(0x00000010)
 end
 end
