@@ -349,7 +349,7 @@ can include any of the following:
   default ACL entry, as used in old Solaris ACLs.
 """
 acl_text(entry::Entry, flags) =
-    unsafe_string(ccall((:archive_entry_acl_text, libarchive), Ptr{UInt8},
+    unsafe_string(ccall((:archive_entry_acl_to_text, libarchive), Ptr{UInt8},
                         (Ptr{Cvoid}, Cint), entry, flags))
 
 "Return a count of entries matching `want`"
