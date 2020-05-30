@@ -110,6 +110,17 @@ function do_open(archive::Reader{ReadFD})
               archive, data.fd, data.block_size)
 end
 
+struct ReadFILE <: ReaderData
+    file::Libc.FILE
+end
+
+Reader(file::Libc.FILE) = Reader(ReadFILE(file))
+
+function do_open(archive::Reader{ReadFILE})
+    data = archive.data
+    @_la_call(archive_read_open_FILE, (Ptr{Cvoid}, Ptr{Cvoid}), archive, data.file)
+end
+
 # """
 # Use this for reading multivolume files by filenames.
 # NOTE: Must be NULL terminated. Sorting is NOT done.
