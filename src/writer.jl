@@ -116,11 +116,22 @@ struct WriteFD <: WriterData
     fd::Cint
 end
 
-Writer(fd::T) where {T<:Integer} = Writer(WriteFD(Cint(fd)))
+Writer(fd::Integer) = Writer(WriteFD(Cint(fd)))
 
 function do_open(archive::Writer{WriteFD})
     data = archive.data
     @_la_call(archive_write_open_fd, (Ptr{Cvoid}, Cint), archive, data.fd)
+end
+
+struct WriteFILE <: WriterData
+    file::Libc.FILE
+end
+
+Writer(file::Libc.FILE) = Writer(WriteFILE(file))
+
+function do_open(archive::Writer{WriteFILE})
+    data = archive.data
+    @_la_call(archive_write_open_FILE, (Ptr{Cvoid}, Ptr{Cvoid}), archive, data.file)
 end
 
 ###
