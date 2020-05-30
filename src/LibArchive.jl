@@ -34,6 +34,11 @@ function version()
     VersionNumber(major, minor, patch)
 end
 
+"""
+libarchive version details
+"""
+version_details() = unsafe_string(ccall((:archive_version_details, libarchive), Ptr{UInt8}, ()))
+
 abstract type Archive <: IO end
 
 function archive_guard(func::Function, archive::Archive)

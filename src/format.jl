@@ -15,6 +15,8 @@ support_filter_grzip(archive::Reader) =
     @_la_call(archive_read_support_filter_grzip, (Ptr{Cvoid},), archive)
 support_filter_lrzip(archive::Reader) =
     @_la_call(archive_read_support_filter_lrzip, (Ptr{Cvoid},), archive)
+support_filter_lz4(archive::Reader) =
+    @_la_call(archive_read_support_filter_lz4, (Ptr{Cvoid},), archive)
 support_filter_lzip(archive::Reader) =
     @_la_call(archive_read_support_filter_lzip, (Ptr{Cvoid},), archive)
 support_filter_lzma(archive::Reader) =
@@ -70,14 +72,22 @@ support_format_mtree(archive::Reader) =
     @_la_call(archive_read_support_format_mtree, (Ptr{Cvoid},), archive)
 support_format_rar(archive::Reader) =
     @_la_call(archive_read_support_format_rar, (Ptr{Cvoid},), archive)
+support_format_rar5(archive::Reader) =
+    @_la_call(archive_read_support_format_rar5, (Ptr{Cvoid},), archive)
 support_format_raw(archive::Reader) =
     @_la_call(archive_read_support_format_raw, (Ptr{Cvoid},), archive)
 support_format_tar(archive::Reader) =
     @_la_call(archive_read_support_format_tar, (Ptr{Cvoid},), archive)
 support_format_xar(archive::Reader) =
     @_la_call(archive_read_support_format_xar, (Ptr{Cvoid},), archive)
+support_format_warc(archive::Reader) =
+    @_la_call(archive_read_support_format_warc, (Ptr{Cvoid},), archive)
 support_format_zip(archive::Reader) =
     @_la_call(archive_read_support_format_zip, (Ptr{Cvoid},), archive)
+support_format_zip_streamable(archive::Reader) =
+    @_la_call(archive_read_support_format_zip_streamable, (Ptr{Cvoid},), archive)
+support_format_zip_seekable(archive::Reader) =
+    @_la_call(archive_read_support_format_zip_seekable, (Ptr{Cvoid},), archive)
 
 # Functions to manually set the format and filters to be used. This is
 # useful to bypass the bidding process when the format and filters to use
