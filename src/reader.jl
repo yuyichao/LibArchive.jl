@@ -305,7 +305,7 @@ been found yet.
 
 NOTE: If the metadata/header of an archive is also encrypted, you
 cannot rely on the number of encrypted entries. That is why this
-function does not return the number of encrypted entries but#
+function does not return the number of encrypted entries but
 just shows that there are some.
 """
 has_encrypted_entries(archive::Reader) =
@@ -411,6 +411,7 @@ set_option(reader::Reader, m::AbstractString, o::AbstractString, v::AbstractStri
 set_options(reader::Reader, opts::AbstractString) =
     @_la_call(archive_read_set_options, (Ptr{Cvoid}, Cstring), reader, opts)
 
+# TODO
 # /*
 #  * A zero-copy version of archive_read_data that also exposes the file offset
 #  * of each returned block.  Note that the client has no way to specify
@@ -437,13 +438,13 @@ set_options(reader::Reader, opts::AbstractString) =
 # /* The "flags" argument selects optional behavior, 'OR' the flags you want. */
 
 # int archive_read_extract(struct archive *, struct archive_entry *,
-# 		     int flags);
+#                      int flags);
 # int archive_read_extract2(struct archive *, struct archive_entry *,
-# 		     struct archive * /* dest */);
-# void	 archive_read_extract_set_progress_callback(struct archive *,
+#                      struct archive * /* dest */);
+# void archive_read_extract_set_progress_callback(struct archive *,
 #      void (*_progress_func)(void *), void *_user_data);
 
 # /* Record the dev/ino of a file that will not be written.  This is
 #  * generally set to the dev/ino of the archive being read. */
-# void		archive_read_extract_set_skip_file(struct archive *,
+# void archive_read_extract_set_skip_file(struct archive *,
 #      int64_t, int64_t);

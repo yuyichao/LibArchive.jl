@@ -435,6 +435,7 @@ function sparse_next(entry::Entry)
     offset[], len[]
 end
 
+# TODO
 # Utility to match up hardlinks.
 #
 # The 'struct archive_entry_linkresolver' is a cache of archive entries

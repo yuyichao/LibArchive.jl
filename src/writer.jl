@@ -277,6 +277,7 @@ set_option(writer::Writer, m::AbstractString, o::AbstractString, v::AbstractStri
 set_options(writer::Writer, opts::AbstractString) =
     @_la_call(archive_write_set_options, (Ptr{Cvoid}, Cstring), writer, opts)
 
+# TODO
 # /* This interface is currently only available for archive_write_disk handles.  */
-# ssize_t	 archive_write_data_block(struct archive *,
-# 				    const void *, size_t, int64_t);
+# ssize_t archive_write_data_block(struct archive *,
+#                                  const void *, size_t, int64_t);
