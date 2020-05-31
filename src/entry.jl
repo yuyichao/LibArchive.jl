@@ -61,6 +61,15 @@ function Base.cconvert(::Type{Ptr{Cvoid}}, entry::Entry)
 end
 Base.unsafe_convert(::Type{Ptr{Cvoid}}, entry::Entry) = entry.ptr
 
+# TODO:
+# As of libarchive 3.4.3, the only way to make sure all of the readers of all the string
+# properties are happy is to use either the `set_*` (local encoding) function
+# or the `update_*_utf8` (utf-8 encoding) function.
+# We assume the input is in UTF8 so I'm going for the `update_*_utf8` one.
+# The function does some encoding conversions eagerly which is not ideal.
+# After https://github.com/libarchive/libarchive/pull/1389 or an equivalent fix
+# we should be able to use `set_*_utf8` instead.
+
 # Retrieve fields from an archive_entry.
 #
 # There are a number of implicit conversions among these fields.  For
@@ -122,11 +131,11 @@ fflags_text(entry::Entry) =
 gid(entry::Entry) =
     ccall((:archive_entry_gid, libarchive), Int64, (Ptr{Cvoid},), entry)
 gname(entry::Entry) =
-    unsafe_string(ccall((:archive_entry_gname, libarchive),
+    unsafe_string(ccall((:archive_entry_gname_utf8, libarchive),
                         Ptr{UInt8}, (Ptr{Cvoid},), entry))
 
 hardlink(entry::Entry) =
-    unsafe_string(ccall((:archive_entry_hardlink, libarchive),
+    unsafe_string(ccall((:archive_entry_hardlink_utf8, libarchive),
                         Ptr{UInt8}, (Ptr{Cvoid},), entry))
 ino(entry::Entry) =
     ccall((:archive_entry_ino, libarchive), Int64, (Ptr{Cvoid},), entry)
@@ -148,7 +157,7 @@ mtime_is_set(entry::Entry) = ccall((:archive_entry_mtime_is_set, libarchive),
 nlink(entry::Entry) =
     ccall((:archive_entry_nlink, libarchive), Cuint, (Ptr{Cvoid},), entry)
 pathname(entry::Entry) =
-    unsafe_string(ccall((:archive_entry_pathname, libarchive),
+    unsafe_string(ccall((:archive_entry_pathname_utf8, libarchive),
                         Ptr{UInt8}, (Ptr{Cvoid},), entry))
 
 perm(entry::Entry) =
@@ -175,14 +184,14 @@ strmode(entry::Entry) =
     unsafe_string(ccall((:archive_entry_strmode, libarchive),
                         Ptr{UInt8}, (Ptr{Cvoid},), entry))
 symlink(entry::Entry) =
-    unsafe_string(ccall((:archive_entry_symlink, libarchive),
+    unsafe_string(ccall((:archive_entry_symlink_utf8, libarchive),
                         Ptr{UInt8}, (Ptr{Cvoid},), entry))
 symlink_type(entry::Entry) =
     ccall((:archive_entry_symlink_type, libarchive), Cint, (Ptr{Cvoid},), entry)
 uid(entry::Entry) =
     ccall((:archive_entry_uid, libarchive), Int64, (Ptr{Cvoid},), entry)
 uname(entry::Entry) =
-    unsafe_string(ccall((:archive_entry_uname, libarchive),
+    unsafe_string(ccall((:archive_entry_uname_utf8, libarchive),
                         Ptr{UInt8}, (Ptr{Cvoid},), entry))
 is_data_encrypted(entry::Entry) =
     ccall((:archive_entry_is_data_encrypted, libarchive), Cint, (Ptr{Cvoid},), entry) != 0
