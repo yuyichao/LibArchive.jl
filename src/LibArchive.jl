@@ -93,6 +93,12 @@ include("reader.jl")
 include("writer.jl")
 include("format.jl")
 
+# const char *  archive_zlib_version(void);
+# const char *  archive_liblzma_version(void);
+# const char *  archive_bzlib_version(void);
+# const char *  archive_liblz4_version(void);
+# const char *  archive_libzstd_version(void);
+
 # /*
 #  * Set archive_match object that will be used in archive_read_disk to
 #  * know whether an entry should be skipped. The callback function
@@ -127,6 +133,8 @@ include("format.jl")
 #  */
 # int	archive_match_path_excluded(struct archive *,
 # 		    struct archive_entry *);
+# /* Control recursive inclusion of directory content when directory is included. Default on. */
+# int	archive_match_set_inclusion_recursion(struct archive *, int);
 # /* Add exclusion pathname pattern. */
 # int	archive_match_exclude_pattern(struct archive *, const char *);
 # /* Add exclusion pathname pattern from file. */

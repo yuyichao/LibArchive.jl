@@ -177,11 +177,19 @@ strmode(entry::Entry) =
 symlink(entry::Entry) =
     unsafe_string(ccall((:archive_entry_symlink, libarchive),
                         Ptr{UInt8}, (Ptr{Cvoid},), entry))
+symlink_type(entry::Entry) =
+    ccall((:archive_entry_symlink_type, libarchive), Cint, (Ptr{Cvoid},), entry)
 uid(entry::Entry) =
     ccall((:archive_entry_uid, libarchive), Int64, (Ptr{Cvoid},), entry)
 uname(entry::Entry) =
     unsafe_string(ccall((:archive_entry_uname, libarchive),
                         Ptr{UInt8}, (Ptr{Cvoid},), entry))
+is_data_encrypted(entry::Entry) =
+    ccall((:archive_entry_is_data_encrypted, libarchive), Cint, (Ptr{Cvoid},), entry) != 0
+is_metadata_encrypted(entry::Entry) =
+    ccall((:archive_entry_is_metadata_encrypted, libarchive), Cint, (Ptr{Cvoid},), entry) != 0
+is_encrypted(entry::Entry) =
+    ccall((:archive_entry_is_encrypted, libarchive), Cint, (Ptr{Cvoid},), entry) != 0
 
 set_atime(entry::Entry, t, ns) =
     ccall((:archive_entry_set_atime, libarchive),
@@ -269,12 +277,21 @@ set_sourcepath(entry::Entry, path::AbstractString) =
 set_symlink(entry::Entry, sym::AbstractString) =
     ccall((:archive_entry_update_symlink_utf8, libarchive),
           Cint, (Ptr{Cvoid}, Cstring), entry, sym)
+set_symlink_type(entry::Entry, typ) =
+    ccall((:archive_entry_set_symlink_type, libarchive),
+          Cvoid, (Ptr{Cvoid}, Cint), entry, typ)
 set_uid(entry::Entry, uid) =
     ccall((:archive_entry_set_uid, libarchive),
           Cvoid, (Ptr{Cvoid}, Int64), entry, uid)
 set_uname(entry::Entry, uname::AbstractString) =
     ccall((:archive_entry_update_uname_utf8, libarchive),
           Cint, (Ptr{Cvoid}, Cstring), entry, uname)
+set_is_data_encrypted(entry::Entry, encrypted::Bool) =
+    ccall((:archive_entry_set_is_data_encrypted, libarchive),
+          Cvoid, (Ptr{Cvoid}, Cint), entry, encrypted)
+set_is_metadata_encrypted(entry::Entry, encrypted::Bool) =
+    ccall((:archive_entry_set_is_metadata_encrypted, libarchive),
+          Cvoid, (Ptr{Cvoid}, Cint), entry, encrypted)
 
 # Storage for Mac OS-specific AppleDouble metadata information.
 # Apple-format tar files store a separate binary blob containing
@@ -352,10 +369,17 @@ acl_text(entry::Entry, flags) =
     unsafe_string(ccall((:archive_entry_acl_to_text, libarchive), Ptr{UInt8},
                         (Ptr{Cvoid}, Cint), entry, flags))
 
+acl_from_text(entry::Entry, text, typ) =
+    @_la_call(archive_entry_acl_from_text, (Ptr{Cvoid}, Cstring, Cint), entry, text, typ)
+
 "Return a count of entries matching `want`"
 acl_count(entry::Entry, want) =
     ccall((:archive_entry_acl_count, libarchive), Cint, (Ptr{Cvoid}, Cint),
           entry, want)
+
+"Return bitmask of ACL types in an archive entry"
+acl_types(entry::Entry) =
+    ccall((:archive_entry_acl_types, libarchive), Cint, (Ptr{Cvoid},), entry)
 
 # Return an opaque ACL object.
 # There's not yet anything clients can actually do with this...

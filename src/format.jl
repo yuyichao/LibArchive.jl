@@ -264,3 +264,6 @@ add_filter_xz(archive::Writer) =
     @_la_call(archive_write_add_filter_xz, (Ptr{Cvoid},), archive)
 add_filter_zstd(archive::Writer) =
     @_la_call(archive_write_add_filter_zstd, (Ptr{Cvoid},), archive)
+
+# int archive_write_set_format_filter_by_ext(struct archive *a, const char *filename);
+# int archive_write_set_format_filter_by_ext_def(struct archive *a, const char *filename, const char * def_ext);
