@@ -21,12 +21,15 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
+import Base.Filesystem
+
 abstract type ReaderData end
 
 mutable struct Reader{T<:ReaderData} <: Archive
     data::T
     ptr::Ptr{Cvoid}
     opened::Bool
+    passphrase_mgr
     function Reader{T}(data::T) where T
         ptr = ccall((:archive_read_new, libarchive), Ptr{Cvoid}, ())
         ptr == C_NULL && throw(OutOfMemoryError())
@@ -222,6 +225,21 @@ end
 reader_readbytes(archive, io::IO, buff) = readbytes!(io, buff)
 reader_skip(archive, io::IO, sz) =
     (skip(io, sz); sz)
+function reader_seek(archive, io::IO, request, whence)
+    if whence == Filesystem.SEEK_CUR
+        skip(io, request)
+        return position(io)
+    elseif whence == Filesystem.SEEK_SET
+        seek(io, request)
+        return request
+    elseif whence == Filesystem.SEEK_END
+        seekend(io)
+        skip(io, request)
+        return position(io)
+    else
+        throw(ArgumentError("Unknown seek type: $whence"))
+    end
+end
 
 function do_open(archive::Reader{T}) where {T<:GenericReadData}
     # Set various callbacks
@@ -260,6 +278,34 @@ header started.
 header_position(archive::Reader) =
     ccall((:archive_read_header_position, libarchive),
           Int64, (Ptr{Cvoid},), archive)
+
+"""
+Returns `Cint(1)` if the archive contains at least one encrypted entry.
+If the archive format not support encryption at all
+`ReadFormatEncryption.UNSUPPORTED` is returned.
+If for any other reason (e.g. not enough data read so far)
+we cannot say whether there are encrypted entries, then
+`ReadFormatEncryption.DONT_KNOW` is returned.
+In general, this function will return values below zero when the
+reader is uncertain or totally incapable of encryption support.
+When this function returns `0` you can be sure that the reader
+supports encryption detection but no encrypted entries have
+been found yet.
+
+NOTE: If the metadata/header of an archive is also encrypted, you
+cannot rely on the number of encrypted entries. That is why this
+function does not return the number of encrypted entries but#
+just shows that there are some.
+"""
+has_encrypted_entries(archive::Reader) =
+    ccall((:archive_read_has_encrypted_entries, libarchive), Cint, (Ptr{Cvoid},), archive)
+
+"""
+Returns a bitmask of capabilities that are supported by the archive format reader.
+If the reader has no special capabilities, `ReadFormatCaps.NONE` is returned.
+"""
+format_capabilities(archive::Reader) =
+    ccall((:archive_read_format_capabilities, libarchive), Cint, (Ptr{Cvoid},), archive)
 
 "Read data from the body of an entry.  Similar to read(2)."
 @inline function unsafe_archive_read(archive::Reader, ptr::Ptr{UInt8}, sz::UInt)
@@ -328,24 +374,31 @@ Reader(f::Function) = archive_guard(f, Reader())
 Reader(f::Function, args...; kws...) =
     archive_guard(f, Reader(args...; kws...))
 
-# /*
-#  * Set read options.
-#  */
-# /* Apply option to the format only. */
-# int archive_read_set_format_option(struct archive *_a,
-# 			    const char *m, const char *o,
-# 			    const char *v);
-# /* Apply option to the filter only. */
-# int archive_read_set_filter_option(struct archive *_a,
-# 			    const char *m, const char *o,
-# 			    const char *v);
-# /* Apply option to both the format and the filter. */
-# int archive_read_set_option(struct archive *_a,
-# 			    const char *m, const char *o,
-# 			    const char *v);
-# /* Apply option string to both the format and the filter. */
-# int archive_read_set_options(struct archive *_a,
-# 			    const char *opts);
+add_passphrase(reader::Reader, passphrase::AbstractString) =
+    @_la_call(archive_read_add_passphrase, (Ptr{Cvoid}, Cstring), reader, passphrase)
+function set_passphrase(reader::Reader, cb::Cb) where Cb
+    mgr = PassphraseMgr(cb)
+    fptr = @cfunction(_passphrase_cb, Ptr{UInt8}, (Ptr{Cvoid},Ref{PassphraseMgr{Cb}}))
+    GC.@preserve mgr begin
+        @_la_call(archive_read_set_passphrase_callback,
+                  (Ptr{Cvoid}, Ref{PassphraseMgr{Cb}}, Ptr{Cvoid}),
+                  reader, mgr, fptr)
+    end
+    reader.passphrase_mgr = mgr
+    return
+end
+
+set_format_option(reader::Reader, m::AbstractString, o::AbstractString, v::AbstractString) =
+    @_la_call(archive_read_set_format_option,
+              (Ptr{Cvoid}, Cstring, Cstring, Cstring), reader, m, o, v)
+set_filter_option(reader::Reader, m::AbstractString, o::AbstractString, v::AbstractString) =
+    @_la_call(archive_read_set_filter_option,
+              (Ptr{Cvoid}, Cstring, Cstring, Cstring), reader, m, o, v)
+set_option(reader::Reader, m::AbstractString, o::AbstractString, v::AbstractString) =
+    @_la_call(archive_read_set_option,
+              (Ptr{Cvoid}, Cstring, Cstring, Cstring), reader, m, o, v)
+set_options(reader::Reader, opts::AbstractString) =
+    @_la_call(archive_read_set_options, (Ptr{Cvoid}, Cstring), reader, opts)
 
 # /*
 #  * A zero-copy version of archive_read_data that also exposes the file offset

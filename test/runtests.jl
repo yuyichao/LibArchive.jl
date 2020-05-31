@@ -484,7 +484,14 @@ end
 
 # Create archive
 @info("Test creating and reading archive")
-function create_archive(writer)
+function create_archive(writer, passphrase=nothing, passphrase_cb=false)
+    callback_called = Ref(false)
+    if passphrase_cb
+        LibArchive.set_passphrase(writer, ()->(callback_called[] = true; passphrase))
+    elseif passphrase !== nothing
+        LibArchive.set_passphrase(writer, passphrase)
+    end
+
     entry = LibArchive.Entry(writer)
     LibArchive.set_pathname(entry, "test.txt")
     LibArchive.set_size(entry, 10)
@@ -504,9 +511,18 @@ function create_archive(writer)
     LibArchive.finish_entry(writer)
 
     @test LibArchive.file_count(writer) == 2
+    close(writer)
+    @test !passphrase_cb || callback_called[]
 end
 
-function verify_archive(reader)
+function verify_archive(reader, passphrase=nothing, passphrase_cb=false)
+    callback_called = Ref(false)
+    if passphrase_cb
+        LibArchive.set_passphrase(reader, ()->(callback_called[] = true; passphrase))
+    elseif passphrase !== nothing
+        LibArchive.add_passphrase(reader, passphrase)
+    end
+
     entry = LibArchive.next_header(reader)
     @test LibArchive.pathname(entry) == "test.txt"
     @test LibArchive.size(entry) == 10
@@ -524,6 +540,7 @@ function verify_archive(reader)
 
     @test_throws EOFError LibArchive.next_header(reader)
     @test LibArchive.file_count(reader) == 2
+    @test !passphrase_cb || callback_called[]
 end
 
 @info("    Filename")
@@ -586,8 +603,6 @@ let
         LibArchive.set_format_gnutar(writer)
         LibArchive.add_filter_bzip2(writer)
         create_archive(writer)
-        # We need to flush the writer for `get_used` to return useful result
-        close(writer)
         LibArchive.get_used(writer)
     end
 
@@ -605,8 +620,6 @@ let
         LibArchive.set_format_gnutar(writer)
         LibArchive.add_filter_bzip2(writer)
         create_archive(writer)
-        # We need to flush the writer for `get_used` to return useful result
-        close(writer)
         LibArchive.get_used(writer)
     end
 
@@ -634,3 +647,28 @@ let
         verify_archive(reader)
     end
 end
+
+function test_zip(passphrase, use_cb_w=false, use_cb_r=false)
+    let
+        io = IOBuffer()
+        LibArchive.Writer(io) do writer
+            LibArchive.set_format_zip(writer)
+            LibArchive.add_filter_none(writer)
+            LibArchive.set_options(writer, "zip:encryption=aes128")
+            create_archive(writer, passphrase, use_cb_w)
+        end
+
+        seek(io, 0)
+        LibArchive.Reader(io) do reader
+            LibArchive.support_filter_none(reader)
+            LibArchive.support_format_zip(reader)
+            verify_archive(reader, passphrase, use_cb_r)
+        end
+    end
+end
+
+@info "Test Passphrase"
+test_zip("password1234", false, false)
+test_zip("password3142", false, true)
+test_zip("password1324", true, false)
+test_zip("password2143", true, true)

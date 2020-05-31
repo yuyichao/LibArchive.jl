@@ -53,6 +53,38 @@ function archive_guard(func::Function, archive::Archive)
     end
 end
 
+mutable struct PassphraseMgr{CallbackT}
+    cb::CallbackT
+    res::Set{String}
+    function PassphraseMgr(cb::CallbackT) where {CallbackT}
+        return new{CallbackT}(cb)
+    end
+end
+
+function _passphrase_cb(::Ptr{Cvoid}, mgr::PassphraseMgr)
+    local res
+    try
+        res = mgr.cb()
+    catch ex
+        @warn("Error: $ex in passphrase callback.")
+        return Ptr{UInt8}(0)
+    end
+    if res === nothing
+        return Ptr{UInt8}(0)
+    end
+    if !isdefined(mgr, :res)
+        mgr.res = Set{String}()
+    end
+    try
+        res = convert(String, res)::String
+        push!(mgr.res, res)
+        return pointer(res)
+    catch ex
+        @warn("Error: $ex when converting passphrase to string.")
+        return Ptr{UInt8}(0)
+    end
+end
+
 include("error.jl")
 include("callback.jl")
 include("archive_utils.jl")

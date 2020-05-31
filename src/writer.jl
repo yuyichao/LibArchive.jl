@@ -29,6 +29,7 @@ mutable struct Writer{T<:WriterData} <: Archive
     data::T
     ptr::Ptr{Cvoid}
     opened::Bool
+    passphrase_mgr
     function Writer{T}(data::T) where T
         ptr = ccall((:archive_write_new, libarchive), Ptr{Cvoid}, ())
         ptr == C_NULL && throw(OutOfMemoryError())
@@ -250,24 +251,31 @@ Writer(f::Function) = archive_guard(f, Writer())
 Writer(f::Function, args...; kws...) =
     archive_guard(f, Writer(args...; kws...))
 
-# /*
-#  * Set write options.
-#  */
-# /* Apply option to the format only. */
-# int archive_write_set_format_option(struct archive *_a,
-# 			    const char *m, const char *o,
-# 			    const char *v);
-# /* Apply option to the filter only. */
-# int archive_write_set_filter_option(struct archive *_a,
-# 			    const char *m, const char *o,
-# 			    const char *v);
-# /* Apply option to both the format and the filter. */
-# int archive_write_set_option(struct archive *_a,
-# 			    const char *m, const char *o,
-# 			    const char *v);
-# /* Apply option string to both the format and the filter. */
-# int archive_write_set_options(struct archive *_a,
-# 			    const char *opts);
+set_passphrase(writer::Writer, passphrase::AbstractString) =
+    @_la_call(archive_write_set_passphrase, (Ptr{Cvoid}, Cstring), writer, passphrase)
+function set_passphrase(writer::Writer, cb::Cb) where Cb
+    mgr = PassphraseMgr(cb)
+    fptr = @cfunction(_passphrase_cb, Ptr{UInt8}, (Ptr{Cvoid},Ref{PassphraseMgr{Cb}}))
+    GC.@preserve mgr begin
+        @_la_call(archive_write_set_passphrase_callback,
+                  (Ptr{Cvoid}, Ref{PassphraseMgr{Cb}}, Ptr{Cvoid}),
+                  writer, mgr, fptr)
+    end
+    writer.passphrase_mgr = mgr
+    return
+end
+
+set_format_option(writer::Writer, m::AbstractString, o::AbstractString, v::AbstractString) =
+    @_la_call(archive_write_set_format_option,
+              (Ptr{Cvoid}, Cstring, Cstring, Cstring), writer, m, o, v)
+set_filter_option(writer::Writer, m::AbstractString, o::AbstractString, v::AbstractString) =
+    @_la_call(archive_write_set_filter_option,
+              (Ptr{Cvoid}, Cstring, Cstring, Cstring), writer, m, o, v)
+set_option(writer::Writer, m::AbstractString, o::AbstractString, v::AbstractString) =
+    @_la_call(archive_write_set_option,
+              (Ptr{Cvoid}, Cstring, Cstring, Cstring), writer, m, o, v)
+set_options(writer::Writer, opts::AbstractString) =
+    @_la_call(archive_write_set_options, (Ptr{Cvoid}, Cstring), writer, opts)
 
 # /* This interface is currently only available for archive_write_disk handles.  */
 # ssize_t	 archive_write_data_block(struct archive *,
