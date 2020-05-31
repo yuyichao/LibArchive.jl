@@ -60,14 +60,3 @@ end
 macro to_close_callback(f, T)
     :(@cfunction($f, Cint, (Ptr{Cvoid}, Ref{$(esc(T))})))
 end
-
-# """
-#     int archive_switch_callback(struct archive*, void *client_data1,
-#                                 void *client_data2)
-#
-# Switches from one client data object to the next/prev client data object.
-# This is useful for reading from different data blocks such as a set of files
-# that make up one large file.
-# """
-# to_switch_callback{T1,T2}(func::Function, ::Type{T1}=Cvoid, ::Type{T2}=Cvoid) =
-#     @cfunction($f, Cint, Tuple{Ptr{Cvoid},Ptr{T1},Ptr{T2}})
