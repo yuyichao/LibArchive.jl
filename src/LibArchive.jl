@@ -5,6 +5,8 @@ __precompile__()
 module LibArchive
 
 import Base: unsafe_read, unsafe_write
+import Base.Filesystem
+import Base.Filesystem: mtime, symlink, ctime
 
 @inline function finalizer(obj, func)
     Base.finalizer(func, obj)

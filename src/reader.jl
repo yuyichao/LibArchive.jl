@@ -21,8 +21,6 @@
 #        open functions if needed.
 #     4. Call LibArchive.free to end processing.
 
-import Base.Filesystem
-
 abstract type ReaderData end
 
 mutable struct Reader{T<:ReaderData} <: Archive
