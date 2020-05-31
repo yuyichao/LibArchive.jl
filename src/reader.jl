@@ -124,12 +124,23 @@ function do_open(archive::Reader{ReadFILE})
     @_la_call(archive_read_open_FILE, (Ptr{Cvoid}, Ptr{Cvoid}), archive, data.file)
 end
 
-# """
-# Use this for reading multivolume files by filenames.
-# NOTE: Must be NULL terminated. Sorting is NOT done.
-# """
-# int archive_read_open_filenames(struct archive*,
-#                                 const char **_filenames, size_t block_size)
+struct ReadFileNames{T} <: ReaderData
+    names::Vector{T}
+    block_size::Int
+end
+
+"""
+Use this for reading multivolume files by filenames.
+NOTE: Sorting is NOT done.
+"""
+Reader(fnames::AbstractVector{T} where T<:AbstractString; block_size=10240) =
+    Reader(ReadFileNames{T}(Vector(fnames), Int(block_size)::Int))
+
+function do_open(archive::Reader{ReadFileNames{T}}) where T
+    data = archive.data
+    @_la_call(archive_read_open_filenames, (Ptr{Cvoid}, Ptr{Cstring}, Csize_t),
+              archive, data.names, data.block_size)
+end
 
 ###
 # Open memory
