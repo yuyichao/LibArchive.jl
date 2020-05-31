@@ -39,6 +39,25 @@ libarchive version details
 """
 version_details() = unsafe_string(ccall((:archive_version_details, libarchive), Ptr{UInt8}, ()))
 
+@inline function _version_nonnull(ptr)
+    ptr == C_NULL && return nothing
+    return VersionNumber(unsafe_string(ptr))
+end
+
+zlib_version() =
+    _version_nonnull(ccall((:archive_zlib_version, libarchive), Ptr{UInt8}, ()))
+liblzma_version() =
+    _version_nonnull(ccall((:archive_liblzma_version, libarchive), Ptr{UInt8}, ()))
+function bzlib_version()
+    ptr = ccall((:archive_bzlib_version, libarchive), Ptr{UInt8}, ())
+    ptr == C_NULL && return nothing
+    return VersionNumber(split(unsafe_string(ptr), ",", limit=2)[1])
+end
+liblz4_version() =
+    _version_nonnull(ccall((:archive_liblz4_version, libarchive), Ptr{UInt8}, ()))
+libzstd_version() =
+    _version_nonnull(ccall((:archive_libzstd_version, libarchive), Ptr{UInt8}, ()))
+
 abstract type Archive <: IO end
 
 function archive_guard(func::Function, archive::Archive)
@@ -92,12 +111,6 @@ include("entry.jl")
 include("reader.jl")
 include("writer.jl")
 include("format.jl")
-
-# const char *  archive_zlib_version(void);
-# const char *  archive_liblzma_version(void);
-# const char *  archive_bzlib_version(void);
-# const char *  archive_liblz4_version(void);
-# const char *  archive_libzstd_version(void);
 
 # /*
 #  * Set archive_match object that will be used in archive_read_disk to
