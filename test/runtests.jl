@@ -7,6 +7,15 @@ import Base.Filesystem
 ## Version
 @info("Testing libarchive $(LibArchive.version()::VersionNumber)")
 
+@testset "Version" begin
+    LibArchive.version_details()
+    LibArchive.zlib_version()
+    LibArchive.liblzma_version()
+    LibArchive.bzlib_version()
+    LibArchive.liblz4_version()
+    LibArchive.libzstd_version()
+end
+
 ## Error
 @testset "Error translation" begin
     @test_throws EOFError LibArchive._la_error(LibArchive.Status.EOF)
