@@ -2,6 +2,13 @@ name = "LibArchive"
 uuid = "1fe3a451-598f-5901-851b-34c9e7f9ea9a"
 version = "0.9.0"
 
+[deps]
+LibArchive_jll = "1e303b3e-d4db-56ce-88c4-91e52606a1a8"
+
+[compat]
+julia = "1"
+LibArchive_jll = "3"
+
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
