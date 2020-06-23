@@ -11,6 +11,7 @@ read a binary file with lzma compression
 reader = LibArchive.Reader(filename)
 LibArchive.support_format_raw(reader)
 LibArchive.support_filter_all(reader)
+entry = LibArchive.next_header(reader)
 arr = read(reader)
 close(reader)
 ```
