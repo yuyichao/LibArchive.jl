@@ -423,6 +423,11 @@ end
             LibArchive.set_symlink(entry, "Sym Link δ")
             @test LibArchive.symlink(entry) == "Sym Link δ"
         end
+        @test LibArchive.symlink_type(entry) == LibArchive.SymlinkType.UNDEFINED
+        LibArchive.set_symlink_type(entry, LibArchive.SymlinkType.FILE)
+        @test LibArchive.symlink_type(entry) == LibArchive.SymlinkType.FILE
+        LibArchive.set_symlink_type(entry, LibArchive.SymlinkType.DIRECTORY)
+        @test LibArchive.symlink_type(entry) == LibArchive.SymlinkType.DIRECTORY
         LibArchive.clear(entry)
         @test_throws ArgumentError LibArchive.symlink(entry)
 
@@ -477,6 +482,34 @@ end
 
         LibArchive.free(entry)
     end
+
+    @testset "Encryption" begin
+        local entry = LibArchive.Entry()
+
+        @test !LibArchive.is_data_encrypted(entry)
+        @test !LibArchive.is_metadata_encrypted(entry)
+        @test !LibArchive.is_encrypted(entry)
+
+        LibArchive.set_is_data_encrypted(entry, true)
+        LibArchive.set_is_metadata_encrypted(entry, false)
+        @test LibArchive.is_data_encrypted(entry)
+        @test !LibArchive.is_metadata_encrypted(entry)
+        @test LibArchive.is_encrypted(entry)
+
+        LibArchive.set_is_data_encrypted(entry, false)
+        LibArchive.set_is_metadata_encrypted(entry, true)
+        @test !LibArchive.is_data_encrypted(entry)
+        @test LibArchive.is_metadata_encrypted(entry)
+        @test LibArchive.is_encrypted(entry)
+
+        LibArchive.set_is_data_encrypted(entry, true)
+        LibArchive.set_is_metadata_encrypted(entry, true)
+        @test LibArchive.is_data_encrypted(entry)
+        @test LibArchive.is_metadata_encrypted(entry)
+        @test LibArchive.is_encrypted(entry)
+
+        LibArchive.free(entry)
+    end
 end
 
 function create_archive(writer, passphrase=nothing, passphrase_cb=false)
@@ -524,6 +557,9 @@ function verify_archive(reader, passphrase=nothing, passphrase_cb=false)
     @test LibArchive.perm(entry) == 0o644
     @test LibArchive.filetype(entry) == LibArchive.FileType.REG
     @test read(reader, String) == "0123456789"
+    if passphrase !== nothing
+        @test LibArchive.is_data_encrypted(entry)
+    end
     LibArchive.free(entry)
 
     entry = LibArchive.next_header(reader)
