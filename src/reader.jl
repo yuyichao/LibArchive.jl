@@ -324,6 +324,17 @@ format_capabilities(archive::Reader) =
     nb % Csize_t
 end
 
+function Base.eof(archive::Reader)
+    b = Ref{UInt8}()
+    nb = ccall((:archive_read_data, libarchive), Cssize_t,
+               (Ptr{Cvoid}, Ptr{UInt8}, Csize_t), archive, b, 1)
+    if nb > 0
+        skip(archive, -1)
+        return false
+    end
+    return true
+end
+
 "Read data from the body of an entry.  Similar to read(2)."
 function unsafe_read(archive::Reader, ptr::Ptr{UInt8}, sz::UInt)
     unsafe_archive_read(archive, ptr, sz) != sz && throw(EOFError())
@@ -333,14 +344,14 @@ end
 "Read data from the body of an entry.  Similar to read(2)."
 function Base.read(archive::Reader, ::Type{UInt8})
     b = Ref{UInt8}()
-    unsafe_read(archive, Base.unsafe_convert(Ptr{UInt8}, b), UInt(1))
+    GC.@preserve b unsafe_read(archive, Base.unsafe_convert(Ptr{UInt8}, b), UInt(1))
     b[]
 end
 
 "Read data from the body of an entry.  Similar to read(2)."
 function Base.readbytes!(archive::Reader, b::Array{UInt8}, nb=length(b))
-    nbread = unsafe_archive_read(archive, Base.unsafe_convert(Ptr{UInt8}, b),
-                                 UInt(nb))
+    nbread = GC.@preserve b unsafe_archive_read(archive, Base.unsafe_convert(Ptr{UInt8}, b),
+                                                UInt(nb))
     nbread < nb && resize!(b, nbread)
     nbread
 end
@@ -351,7 +362,7 @@ function Base.read(archive::Reader)
     block_size = UInt(1024)
     res = Vector{UInt8}(undef, block_size)
     pos = 1
-    while true
+    GC.@preserve res while true
         ptr = Base.unsafe_convert(Ptr{UInt8}, Ref(res, pos))
         nbread = unsafe_archive_read(archive, ptr, block_size)
         if nbread < block_size
@@ -361,15 +372,23 @@ function Base.read(archive::Reader)
         pos = Int(pos + block_size)
         resize!(res, pos + block_size - 1)
     end
+    return res
 end
 
 "Read data from the body of an entry.  Similar to read(2)."
 @inline Base.readavailable(archive::Reader) = read(archive)
 
 "Seek within the body of an entry.  Similar to lseek(2)."
-Base.seek(archive::Reader, offset, what) =
-    ccall((:archive_seek_data, libarchive), Int64,
-          (Ptr{Cvoid}, Int64, Cint), archive, offset, what)
+function Base.seek(archive::Reader, offset, what=Filesystem.SEEK_SET)
+    res = ccall((:archive_seek_data, libarchive), Int64,
+                (Ptr{Cvoid}, Int64, Cint), archive, offset, what)
+    if res < 0
+        _la_error(Cint(res), archive)
+    end
+    return archive
+end
+Base.skip(archive::Reader, request) = seek(archive, request, Filesystem.SEEK_CUR)
+Base.seekend(archive::Reader, request=0) = seek(archive, request, Filesystem.SEEK_END)
 
 "Skips entire entry"
 Base.skip(archive::Reader) =
