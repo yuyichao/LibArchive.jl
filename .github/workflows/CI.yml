@@ -22,6 +22,10 @@ jobs:
           - windows-latest
         arch:
           - x64
+        exclude:
+          - version: 'nightly' # cloning of registry hangs
+            os: windows-latest
+            arch: x64
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
