@@ -109,6 +109,14 @@ end
     @test LibArchive.Reader(_->0.1) === 0.1
 end
 
+macro _noinline(ex)
+    if VERSION >= v"1.8.0"
+        return :(@noinline $(esc(ex)))
+    else
+        return esc(ex)
+    end
+end
+
 @testset "Availability of filters and formats" begin
     @testset "Reader" begin
         LibArchive.Reader() do reader
@@ -190,25 +198,27 @@ end
         end
 
         LibArchive.Writer() do writer
-            LibArchive.set_format_mtree_classic(writer)
-            LibArchive.set_format_v7tar(writer)
-            LibArchive.set_format_7zip(writer)
-            LibArchive.set_format_ar_bsd(writer)
-            LibArchive.set_format_ar_svr4(writer)
-            if !Sys.iswindows()
-                LibArchive.set_format_cpio(writer)
+            @_noinline begin # Try to fix coverage
+                LibArchive.set_format_mtree_classic(writer)
+                LibArchive.set_format_v7tar(writer)
+                LibArchive.set_format_7zip(writer)
+                LibArchive.set_format_ar_bsd(writer)
+                LibArchive.set_format_ar_svr4(writer)
+                if !Sys.iswindows()
+                    LibArchive.set_format_cpio(writer)
+                end
+                LibArchive.set_format_cpio_newc(writer)
+                LibArchive.set_format_gnutar(writer)
+                LibArchive.set_format_iso9660(writer)
+                LibArchive.set_format_mtree(writer)
+                LibArchive.set_format_pax(writer)
+                LibArchive.set_format_pax_restricted(writer)
+                LibArchive.set_format_shar(writer)
+                LibArchive.set_format_shar_dump(writer)
+                LibArchive.set_format_ustar(writer)
+                LibArchive.set_format_xar(writer)
+                LibArchive.set_format_zip(writer)
             end
-            LibArchive.set_format_cpio_newc(writer)
-            LibArchive.set_format_gnutar(writer)
-            LibArchive.set_format_iso9660(writer)
-            LibArchive.set_format_mtree(writer)
-            LibArchive.set_format_pax(writer)
-            LibArchive.set_format_pax_restricted(writer)
-            LibArchive.set_format_shar(writer)
-            LibArchive.set_format_shar_dump(writer)
-            LibArchive.set_format_ustar(writer)
-            LibArchive.set_format_xar(writer)
-            LibArchive.set_format_zip(writer)
         end
     end
 end
@@ -606,7 +616,7 @@ end
                 @test LibArchive.filter_count(reader) > 0
                 LibArchive.filter_bytes(reader, 0)
                 @test (LibArchive.filter_code(reader, 0) ==
-                       LibArchive.FilterType.BZIP2)
+                    LibArchive.FilterType.BZIP2)
                 @test LibArchive.filter_name(reader, 0) == "bzip2"
             end
         end
