@@ -23,7 +23,7 @@ jobs:
         arch:
           - x64
         exclude:
-          - version: 'nightly' # cloning of registry hangs
+          - version: '1.6' # cloning of registry hangs
             os: windows-latest
             arch: x64
     steps:
