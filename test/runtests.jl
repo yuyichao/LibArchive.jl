@@ -195,7 +195,9 @@ end
             LibArchive.set_format_7zip(writer)
             LibArchive.set_format_ar_bsd(writer)
             LibArchive.set_format_ar_svr4(writer)
-            LibArchive.set_format_cpio(writer)
+            if !Sys.iswindows()
+                LibArchive.set_format_cpio(writer)
+            end
             LibArchive.set_format_cpio_newc(writer)
             LibArchive.set_format_gnutar(writer)
             LibArchive.set_format_iso9660(writer)
