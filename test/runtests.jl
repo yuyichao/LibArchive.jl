@@ -109,14 +109,6 @@ end
     @test LibArchive.Reader(_->0.1) === 0.1
 end
 
-macro _noinline(ex)
-    if VERSION >= v"1.8.0"
-        return :(@noinline $(esc(ex)))
-    else
-        return esc(ex)
-    end
-end
-
 @testset "Availability of filters and formats" begin
     @testset "Reader" begin
         LibArchive.Reader() do reader
@@ -158,12 +150,40 @@ end
             LibArchive.support_format_raw(reader)
             LibArchive.support_format_tar(reader)
             LibArchive.support_format_xar(reader)
+            LibArchive.support_format_warc(reader)
             LibArchive.support_format_zip(reader)
+            LibArchive.support_format_zip_streamable(reader)
+            LibArchive.support_format_zip_seekable(reader)
+        end
+
+        LibArchive.Reader() do reader
+            LibArchive.set_format_7zip(reader)
+            LibArchive.set_format_ar_bsd(reader)
+            LibArchive.set_format_ar_gnu(reader)
+            LibArchive.set_format_ar_svr4(reader)
+            LibArchive.set_format_cpio(reader)
+            LibArchive.set_format_cpio_newc(reader)
+            LibArchive.set_format_gnutar(reader)
+            LibArchive.set_format_iso9660(reader)
+            LibArchive.set_format_mtree(reader)
+            LibArchive.set_format_mtree_classic(reader)
+            LibArchive.set_format_pax(reader)
+            LibArchive.set_format_pax_restricted(reader)
+            LibArchive.set_format_raw(reader)
+            LibArchive.set_format_ustar(reader)
+            LibArchive.set_format_v7tar(reader)
+            LibArchive.set_format_warc(reader)
+            LibArchive.set_format_xar(reader)
+            LibArchive.set_format_zip(reader)
         end
 
         LibArchive.Reader() do reader
             LibArchive.set_format(reader, LibArchive.Format.TAR)
             LibArchive.append_filter(reader, LibArchive.FilterType.BZIP2)
+        end
+
+        LibArchive.Reader() do reader
+            LibArchive.set_format(reader, "gnutar")
         end
     end
 
@@ -198,27 +218,25 @@ end
         end
 
         LibArchive.Writer() do writer
-            @_noinline begin # Try to fix coverage
-                LibArchive.set_format_mtree_classic(writer)
-                LibArchive.set_format_v7tar(writer)
-                LibArchive.set_format_7zip(writer)
-                LibArchive.set_format_ar_bsd(writer)
-                LibArchive.set_format_ar_svr4(writer)
-                if !Sys.iswindows()
-                    LibArchive.set_format_cpio(writer)
-                end
-                LibArchive.set_format_cpio_newc(writer)
-                LibArchive.set_format_gnutar(writer)
-                LibArchive.set_format_iso9660(writer)
-                LibArchive.set_format_mtree(writer)
-                LibArchive.set_format_pax(writer)
-                LibArchive.set_format_pax_restricted(writer)
-                LibArchive.set_format_shar(writer)
-                LibArchive.set_format_shar_dump(writer)
-                LibArchive.set_format_ustar(writer)
-                LibArchive.set_format_xar(writer)
-                LibArchive.set_format_zip(writer)
+            LibArchive.set_format_mtree_classic(writer)
+            LibArchive.set_format_v7tar(writer)
+            LibArchive.set_format_7zip(writer)
+            LibArchive.set_format_ar_bsd(writer)
+            LibArchive.set_format_ar_svr4(writer)
+            if !Sys.iswindows()
+                LibArchive.set_format_cpio(writer)
             end
+            LibArchive.set_format_cpio_newc(writer)
+            LibArchive.set_format_gnutar(writer)
+            LibArchive.set_format_iso9660(writer)
+            LibArchive.set_format_mtree(writer)
+            LibArchive.set_format_pax(writer)
+            LibArchive.set_format_pax_restricted(writer)
+            LibArchive.set_format_shar(writer)
+            LibArchive.set_format_shar_dump(writer)
+            LibArchive.set_format_ustar(writer)
+            LibArchive.set_format_xar(writer)
+            LibArchive.set_format_zip(writer)
         end
     end
 end
